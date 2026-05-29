@@ -216,7 +216,16 @@ export default function LoginPage() {
                 fontSize: "0.9rem",
                 cursor: "pointer",
               }}
-              onClick={() => alert("Google login próximamente")}
+              onClick={async () => {
+  const { createClient } = await import("@/lib/supabase/client");
+  const supabase = createClient();
+  await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`,
+    },
+  });
+}}
             >
               <GoogleIcon />
               Google

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const documentoSchema = z.object({
   type: z.enum(["recibido", "enviado"], {
-    required_error: "El tipo es obligatorio",
+    error: "El tipo es obligatorio",
   }),
   document_id: z.string().max(100).optional().nullable(),
   description: z

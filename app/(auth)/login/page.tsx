@@ -160,11 +160,7 @@ export default function LoginPage() {
 
           {/* Olvidaste contraseña */}
           <div className="text-right">
-            
-              href="/recuperar-contrasena"
-              className="text-xs hover:underline"
-              style={{ color: "rgba(203,239,235,0.8)" }}
-            >
+            <a href="/recuperar-contrasena" className="text-xs hover:underline" style={{ color: "rgba(203,239,235,0.8)" }}>
               ¿Olvidaste tu contraseña?
             </a>
           </div>
@@ -252,7 +248,7 @@ export default function LoginPage() {
           {/* Registro */}
           <p className="text-center text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
             ¿No tienes cuenta?{" "}
-            
+            <a
               href="/registro"
               className="font-semibold hover:underline"
               style={{ color: "rgba(203,239,235,1)" }}

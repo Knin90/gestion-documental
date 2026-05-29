@@ -44,3 +44,51 @@ export async function signOut() {
   await supabase.auth.signOut();
   redirect("/login");
 }
+
+const registroSchema = z.object({
+  email: z.string().email("Ingresa un correo válido"),
+  password: z.string().min(12, "La contraseña debe tener al menos 12 caracteres"),
+  full_name: z.string().min(1, "El nombre es obligatorio").max(200),
+});
+
+export async function registro(formData: FormData) {
+  const result = registroSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+    full_name: formData.get("full_name"),
+  });
+
+  if (!result.success) {
+    return { error: result.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signUp({
+    email: result.data.email,
+    password: result.data.password,
+    options: {
+      data: { full_name: result.data.full_name },
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+    },
+  });
+
+  if (error) {
+    if (error.message.includes("no está autorizado")) {
+      return {
+        error: "Este correo no tiene acceso. Pide a un usuario que te invite.",
+      };
+    }
+    if (
+      error.message.includes("already registered") ||
+      error.message.includes("already been registered") ||
+      error.message.includes("User already registered")
+    ) {
+      return {
+        error: "Este correo ya tiene una cuenta. Inicia sesión directamente.",
+      };
+    }
+    return { error: "No se pudo crear la cuenta. Verifica los datos." };
+  }
+
+  return { success: true };
+}

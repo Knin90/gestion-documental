@@ -16,9 +16,7 @@ export async function login(formData: FormData) {
   });
 
   if (!result.success) {
-    // CORREGIDO: usar result.error.issues en lugar de result.error.errors
-    const firstError = result.error.issues[0];
-    return { error: firstError.message };
+  return { error: "Correo o contraseña incorrectos" };
   }
 
   const supabase = await createClient();

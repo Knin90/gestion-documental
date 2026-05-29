@@ -95,8 +95,7 @@ export default function LoginPage() {
         <div className="mx-14" style={{ height: "1px", backgroundColor: "rgba(203,239,235,0.12)" }} />
 
         {/* BLOQUE MEDIO — Formulario */}
-        <div className="px-14 flex flex-col gap-5 flex-1 justify-center py-12">
-
+        <form onSubmit={handleSubmit} className="px-14 flex flex-col gap-5 flex-1 justify-center py-12">
           {/* Email */}
           <div className="flex flex-col gap-2">
             <label htmlFor="email" className="text-sm font-medium" style={{ color: "rgba(203,239,235,0.8)" }}>
@@ -178,29 +177,23 @@ export default function LoginPage() {
 
           {/* Botón principal */}
           <button
-            type="submit"
-            form="login-form"
-            disabled={loading}
-            className="w-full font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
-            style={{
-              height: "52px",
-              borderRadius: "12px",
-              border: "none",
-              backgroundColor: "white",
-              color: "#053931",
-              fontSize: "1rem",
-              cursor: loading ? "not-allowed" : "pointer",
-              marginTop: "4px",
-            }}
-            onClick={(e) => {
-              const form = document.querySelector("form");
-              if (form) form.requestSubmit();
-            }}
-          >
-            {loading ? "O inicie sesión con" : "Iniciar sesión"}
-          </button>
-
-        </div>
+  type="submit"
+  disabled={loading}
+  className="w-full font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+  style={{
+    height: "52px",
+    borderRadius: "12px",
+    border: "none",
+    backgroundColor: "white",
+    color: "#053931",
+    fontSize: "1rem",
+    cursor: loading ? "not-allowed" : "pointer",
+    marginTop: "4px",
+  }}
+>
+  {loading ? "Iniciando sesión..." : "Iniciar sesión"}
+</button>
+        </form>
 
         {/* LÍNEA SEPARADORA */}
         <div className="mx-14" style={{ height: "1px", backgroundColor: "rgba(203,239,235,0.12)" }} />
@@ -284,12 +277,7 @@ export default function LoginPage() {
               Crear cuenta
             </a>
           </p>
-
         </div>
-
-        {/* Formulario real (oculto para el submit) */}
-        <form id="login-form" onSubmit={handleSubmit} className="hidden" />
-
       </div>
     </div>
   );

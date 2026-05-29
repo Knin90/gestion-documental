@@ -58,7 +58,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-end px-16 py-8"
+      className="min-h-screen flex items-center justify-end px-40 py-8"
       style={{
         backgroundImage: "url('/login-bg.webp')",
         backgroundSize: "cover",
@@ -66,116 +66,112 @@ export default function LoginPage() {
         backgroundRepeat: "no-repeat",
       }}
     >
-      {/* Overlay oscuro sobre toda la pantalla */}
-      <div
-        className="absolute inset-0"
-        style={{ backgroundColor: "rgba(0,0,0,0.35)"}}
-      />
+      <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.35)" }} />
 
-      {/* Tarjeta de login */}
       <div
-        className="relative z-10 w-full max-w-md rounded-2xl p-8 space-y-6"
+        className="relative z-10 w-full max-w-xl rounded-3xl flex flex-col min-h-[700px]"
         style={{
-          backgroundColor: "rgba(5, 57, 49, 0.75)",
-          backdropFilter: "blur(18px)",
-          WebkitBackdropFilter: "blur(18px)",
+          backgroundColor: "rgba(5, 57, 49, 0.80)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
           border: "1px solid rgba(203, 239, 235, 0.15)",
           boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
         }}
       >
-        {/* Saludo */}
-        <div className="text-center space-y-1">
-          <h1 className="font-serif text-3xl font-bold text-white">
+        {/* BLOQUE SUPERIOR — Saludo */}
+        <div className="text-center px-14 pt-16 pb-10">
+          <h1 className="font-serif text-4xl font-bold text-white mb-2">
             ¡Hola!
           </h1>
-          <h2 className="font-serif text-2xl font-semibold text-white">
+          <h2 className="font-serif text-2xl font-semibold text-white mb-3">
             Bienvenido de nuevo
           </h2>
-          <p className="text-sm" style={{ color: "rgba(203,239,235,0.7)" }}>
+          <p className="text-sm" style={{ color: "rgba(203,239,235,0.65)" }}>
             Inicia sesión para continuar
           </p>
         </div>
 
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* LÍNEA SEPARADORA */}
+        <div className="mx-14" style={{ height: "1px", backgroundColor: "rgba(203,239,235,0.12)" }} />
+
+        {/* BLOQUE MEDIO — Formulario */}
+        <div className="px-14 flex flex-col gap-5 flex-1 justify-center py-12">
 
           {/* Email */}
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            placeholder="Ingresa tu correo"
-            disabled={loading}
-            style={{
-              width: "100%",
-              height: "48px",
-              padding: "0 16px",
-              borderRadius: "10px",
-              border: "none",
-              backgroundColor: "rgba(255,255,255,0.15)",
-              color: "white",
-              fontSize: "0.9rem",
-              outline: "none",
-              boxSizing: "border-box",
-            }}
-            className="placeholder-white/50 focus:ring-2 focus:ring-white/30"
-          />
-
-          {/* Contraseña con ojo */}
-          <div className="relative">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="email" className="text-sm font-medium" style={{ color: "rgba(203,239,235,0.8)" }}>
+              Correo electrónico
+            </label>
             <input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
               required
-              placeholder="••••••••••"
+              placeholder="correo@ejemplo.com"
               disabled={loading}
               style={{
-                width: "100%",
-                height: "48px",
-                padding: "0 48px 0 16px",
-                borderRadius: "10px",
-                border: "none",
-                backgroundColor: "rgba(255,255,255,0.15)",
+                height: "52px",
+                padding: "0 18px",
+                borderRadius: "12px",
+                border: "1px solid rgba(203,239,235,0.2)",
+                backgroundColor: "rgba(255,255,255,0.08)",
                 color: "white",
-                fontSize: "0.9rem",
+                fontSize: "0.95rem",
                 outline: "none",
                 boxSizing: "border-box",
+                width: "100%",
               }}
-              className="placeholder-white/50 focus:ring-2 focus:ring-white/30"
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-              className="absolute right-3 top-1/2 -translate-y-1/2 focus:outline-none"
-              style={{ color: "rgba(203,239,235,0.7)" }}
-            >
-              <EyeIcon visible={showPassword} />
-            </button>
           </div>
 
-          {/* Olvidaste contraseña */}
-          <div className="text-right">
-            <a href="/recuperar-contrasena" className="text-xs hover:underline" style={{ color: "rgba(203,239,235,0.8)" }}>
-              ¿Olvidaste tu contraseña?
-            </a>
+          {/* Contraseña */}
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <label htmlFor="password" className="text-sm font-medium" style={{ color: "rgba(203,239,235,0.8)" }}>
+                Contraseña
+              </label>
+              <a href="/recuperar-contrasena" className="text-xs hover:underline" style={{ color: "rgba(203,239,235,0.6)" }}>
+                ¿Olvidaste tu contraseña?
+              </a>
+            </div>
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                required
+                placeholder="••••••••••••"
+                disabled={loading}
+                style={{
+                  height: "52px",
+                  padding: "0 52px 0 18px",
+                  borderRadius: "12px",
+                  border: "1px solid rgba(203,239,235,0.2)",
+                  backgroundColor: "rgba(255,255,255,0.08)",
+                  color: "white",
+                  fontSize: "0.95rem",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  width: "100%",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                className="absolute right-4 top-1/2 -translate-y-1/2 focus:outline-none"
+                style={{ color: "rgba(203,239,235,0.6)" }}
+              >
+                <EyeIcon visible={showPassword} />
+              </button>
+            </div>
           </div>
 
           {/* Error */}
           {error && (
-            <div
-              role="alert"
-              className="text-sm rounded-lg p-3"
-              style={{
-                backgroundColor: "rgba(220,38,38,0.2)",
-                border: "1px solid rgba(220,38,38,0.4)",
-                color: "#fca5a5",
-              }}
-            >
+            <div role="alert" className="text-sm rounded-xl p-4" style={{ backgroundColor: "rgba(220,38,38,0.2)", border: "1px solid rgba(220,38,38,0.4)", color: "#fca5a5" }}>
               {error}
             </div>
           )}
@@ -183,42 +179,56 @@ export default function LoginPage() {
           {/* Botón principal */}
           <button
             type="submit"
+            form="login-form"
             disabled={loading}
-            className="w-full font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
             style={{
-              height: "48px",
-              borderRadius: "10px",
+              height: "52px",
+              borderRadius: "12px",
               border: "none",
               backgroundColor: "white",
               color: "#053931",
-              fontSize: "0.95rem",
+              fontSize: "1rem",
               cursor: loading ? "not-allowed" : "pointer",
+              marginTop: "4px",
+            }}
+            onClick={(e) => {
+              const form = document.querySelector("form");
+              if (form) form.requestSubmit();
             }}
           >
-            {loading ? "Iniciando sesión..." : "Iniciar sesión"}
+            {loading ? "O inicie sesión con" : "Iniciar sesión"}
           </button>
 
-          {/* Separador */}
+        </div>
+
+        {/* LÍNEA SEPARADORA */}
+        <div className="mx-14" style={{ height: "1px", backgroundColor: "rgba(203,239,235,0.12)" }} />
+
+        {/* BLOQUE INFERIOR — Social + Registro */}
+        <div className="px-14 pt-8 pb-12 flex flex-col gap-5">
+
+          {/* Separador texto */}
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.2)" }} />
-            <span className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
-              O continúa con
+            <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.15)" }} />
+            <span className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.45)" }}>
+              O inicie sesión con
             </span>
-            <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.2)" }} />
+            <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.15)" }} />
           </div>
 
-          {/* Botones sociales */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Google y Apple */}
+          <div className="grid grid-cols-3 gap-4">
             <button
               type="button"
-              className="flex items-center justify-center gap-2 font-medium transition-all hover:opacity-90"
+              className="flex items-center justify-center gap-2 font-medium transition-all hover:opacity-80"
               style={{
-                height: "44px",
-                borderRadius: "10px",
-                backgroundColor: "rgba(255,255,255,0.12)",
+                height: "48px",
+                borderRadius: "12px",
+                backgroundColor: "rgba(255,255,255,0.10)",
                 border: "1px solid rgba(255,255,255,0.2)",
                 color: "white",
-                fontSize: "0.85rem",
+                fontSize: "0.9rem",
                 cursor: "pointer",
               }}
               onClick={() => alert("Google login próximamente")}
@@ -228,14 +238,14 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              className="flex items-center justify-center gap-2 font-medium transition-all hover:opacity-90"
+              className="flex items-center justify-center gap-2 font-medium transition-all hover:opacity-80"
               style={{
-                height: "44px",
-                borderRadius: "10px",
-                backgroundColor: "rgba(255,255,255,0.12)",
+                height: "48px",
+                borderRadius: "12px",
+                backgroundColor: "rgba(255,255,255,0.10)",
                 border: "1px solid rgba(255,255,255,0.2)",
                 color: "white",
-                fontSize: "0.85rem",
+                fontSize: "0.9rem",
                 cursor: "pointer",
               }}
               onClick={() => alert("Apple login próximamente")}
@@ -243,35 +253,43 @@ export default function LoginPage() {
               <AppleIcon />
               Apple
             </button>
+            <button
+              type="button"
+              className="flex items-center justify-center gap-2 font-medium transition-all hover:opacity-80"
+              style={{
+                height: "48px",
+                borderRadius: "12px",
+                backgroundColor: "rgba(255,255,255,0.10)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                color: "white",
+                fontSize: "0.9rem",
+                cursor: "pointer",
+                }}
+              onClick={() => alert("Microsoft login próximamente")}
+            >
+  <svg width="20" height="20" viewBox="0 0 24 24">
+    <rect x="1" y="1" width="10" height="10" fill="#F25022"/>
+    <rect x="13" y="1" width="10" height="10" fill="#7FBA00"/>
+    <rect x="1" y="13" width="10" height="10" fill="#00A4EF"/>
+    <rect x="13" y="13" width="10" height="10" fill="#FFB900"/>
+  </svg>
+  Microsoft
+</button>
           </div>
 
-          {/* Registro */}
-          <p className="text-center text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>
+          {/* Crear cuenta */}
+          <p className="text-center text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
             ¿No tienes cuenta?{" "}
-            <a
-              href="/registro"
-              className="font-semibold hover:underline"
-              style={{ color: "rgba(203,239,235,1)" }}
-            >
+            <a href="/registro" className="font-semibold hover:underline" style={{ color: "rgba(203,239,235,1)" }}>
               Crear cuenta
             </a>
           </p>
 
-          {/* Nota 2FA */}
-          <div className="text-center pt-2 border-t" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
-            <details className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
-              <summary className="cursor-pointer hover:opacity-80">
-                ¿Qué es la verificación en dos pasos?
-              </summary>
-              <p className="mt-2 text-left">
-                Este sistema requiere autenticación de dos factores (2FA).
-                Después de iniciar sesión, necesitarás un código de tu app
-                autenticadora (Google Authenticator, Microsoft Authenticator, etc.).
-              </p>
-            </details>
-          </div>
+        </div>
 
-        </form>
+        {/* Formulario real (oculto para el submit) */}
+        <form id="login-form" onSubmit={handleSubmit} className="hidden" />
+
       </div>
     </div>
   );

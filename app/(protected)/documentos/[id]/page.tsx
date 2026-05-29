@@ -40,7 +40,6 @@ export default async function DetalleDocumentoPage({ params }: PageProps) {
 
   return (
     <div className="p-6 max-w-3xl space-y-6">
-      {/* Encabezado */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -70,31 +69,13 @@ export default async function DetalleDocumentoPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Campos */}
       <div className="rounded-xl border bg-card divide-y">
-        <CampoDetalle
-          icono={Hash}
-          label="Identificador"
-          valor={doc.document_id ?? "—"}
-        />
-        <CampoDetalle
-          icono={Calendar}
-          label="Fecha"
-          valor={fechaFormateada}
-        />
-        <CampoDetalle
-          icono={User}
-          label="Firmante"
-          valor={doc.signed_by ?? "—"}
-        />
-        <CampoDetalle
-          icono={Send}
-          label="Destinatario"
-          valor={doc.addressed_to ?? "—"}
-        />
+        <CampoDetalle icono={Hash} label="Identificador" valor={doc.document_id ?? "—"} />
+        <CampoDetalle icono={Calendar} label="Fecha" valor={fechaFormateada} />
+        <CampoDetalle icono={User} label="Firmante" valor={doc.signed_by ?? "—"} />
+        <CampoDetalle icono={Send} label="Destinatario" valor={doc.addressed_to ?? "—"} />
       </div>
 
-      {/* PDF */}
       <div className="rounded-xl border bg-card p-6 space-y-3">
         <h2 className="text-sm font-semibold flex items-center gap-2">
           <FileText className="h-4 w-4" />
@@ -144,7 +125,6 @@ export default async function DetalleDocumentoPage({ params }: PageProps) {
         )}
       </div>
 
-      {/* Metadatos */}
       <div className="rounded-xl border bg-card p-6 space-y-2">
         <h2 className="text-sm font-semibold text-muted-foreground mb-3">Metadatos</h2>
         <p className="text-xs text-muted-foreground">
@@ -157,7 +137,6 @@ export default async function DetalleDocumentoPage({ params }: PageProps) {
         )}
       </div>
 
-      {/* Volver */}
       <Link
         href={`/documentos?tipo=${doc.type}`}
         className="inline-flex text-sm text-muted-foreground hover:text-foreground transition-colors"

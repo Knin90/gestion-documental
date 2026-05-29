@@ -314,7 +314,17 @@ export default function LoginPage() {
                 fontSize: "0.9rem",
                 cursor: "pointer",
               }}
-              onClick={() => alert("Microsoft login próximamente")}
+              onClick={async () => {
+                const { createClient } = await import("@/lib/supabase/client");
+                const supabase = createClient();
+                await supabase.auth.signInWithOAuth({
+                  provider: "azure",
+                  options: {
+                    scopes: "email",
+                    redirectTo: `https://gestion.kunix.dev/auth/callback`,
+                  },
+                });
+              }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24">
                 <rect x="1" y="1" width="10" height="10" fill="#F25022" />

@@ -58,7 +58,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-end p-8"
+      className="min-h-screen flex items-center justify-end px-16 py-8"
       style={{
         backgroundImage: "url('/login-bg.webp')",
         backgroundSize: "cover",
@@ -69,14 +69,14 @@ export default function LoginPage() {
       {/* Overlay oscuro sobre toda la pantalla */}
       <div
         className="absolute inset-0"
-        style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+        style={{ backgroundColor: "rgba(0,0,0,0.35)"}}
       />
 
       {/* Tarjeta de login */}
       <div
         className="relative z-10 w-full max-w-md rounded-2xl p-8 space-y-6"
         style={{
-          backgroundColor: "rgba(5, 57, 49, 0.55)",
+          backgroundColor: "rgba(5, 57, 49, 0.75)",
           backdropFilter: "blur(18px)",
           WebkitBackdropFilter: "blur(18px)",
           border: "1px solid rgba(203, 239, 235, 0.15)",

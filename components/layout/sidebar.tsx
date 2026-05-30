@@ -35,9 +35,9 @@ interface SidebarContenidoProps {
 
 function SidebarContenido({ onNavigate }: SidebarContenidoProps) {
   const router = useRouter();
+  const supabase = createClient();
 
   async function handleCerrarSesion() {
-    const supabase = createClient();
     const { error } = await supabase.auth.signOut();
     if (error) {
       toast.error("Error al cerrar sesión");
@@ -52,6 +52,7 @@ function SidebarContenido({ onNavigate }: SidebarContenidoProps) {
       <div className="flex h-16 items-center border-b border-sidebar-border px-4">
         <Link
           href="/dashboard"
+          prefetch={false}
           onClick={onNavigate}
           className="flex items-center gap-2.5 font-semibold"
         >

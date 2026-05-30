@@ -19,6 +19,7 @@ export function SidebarItem({ href, label, icon: Icon, onNavigate }: SidebarItem
   return (
     <Link
       href={href}
+      prefetch={false}
       onClick={onNavigate}
       className={cn(
         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",

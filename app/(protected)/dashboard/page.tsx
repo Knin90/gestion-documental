@@ -34,115 +34,17 @@ function TarjetaTotal({ titulo, valor, icono: Icono, descripcion }: TarjetaTotal
   );
 }
 
-function calcularDatosPorMes(docs: { document_date: string | null }[]) {
+function completarMeses(datos: { mes: string; total: number }[]) {
   const NOMBRES_MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
   const ahora = new Date();
   const resultado: { mes: string; total: number }[] = [];
   for (let i = 11; i >= 0; i--) {
     const fecha = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
     const clave = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}`;
-    const total = docs.filter((d) => d.document_date?.startsWith(clave)).length;
-    resultado.push({ mes: NOMBRES_MESES[fecha.getMonth()], total });
+    const encontrado = datos.find((d) => d.mes === clave);
+    resultado.push({ mes: NOMBRES_MESES[fecha.getMonth()], total: encontrado?.total ?? 0 });
   }
   return resultado;
-}
-
-function calcularDatosPorAnio(docs: { document_date: string | null }[]) {
-  const conteo: Record<string, number> = {};
-  for (const doc of docs) {
-    if (!doc.document_date) continue;
-    const anio = doc.document_date.substring(0, 4);
-    conteo[anio] = (conteo[anio] ?? 0) + 1;
-  }
-  return Object.entries(conteo)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([anio, total]) => ({ anio, total }));
-}
-
-function calcularTop5(docs: Record<string, string | null>[], campo: string) {
-  const conteo: Record<string, number> = {};
-  for (const doc of docs) {
-    const valor = doc[campo];
-    if (!valor) continue;
-    conteo[valor] = (conteo[valor] ?? 0) + 1;
-  }
-  return Object.entries(conteo)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 5)
-    .map(([nombre, total]) => ({ nombre, total }));
-}
-
-async function obtenerDatosDashboard(tipo: TipoDocumento) {
-  const supabase = await createClient();
-  const ahora = new Date();
-  const anioActual = ahora.getFullYear();
-
-  const { count: total } = await supabase
-    .from("documents")
-    .select("*", { count: "exact", head: true })
-    .eq("type", tipo)
-    .is("deleted_at", null);
-
-  const inicioDeMes = new Date(anioActual, ahora.getMonth(), 1).toISOString();
-  const { count: totalEsteMes } = await supabase
-    .from("documents")
-    .select("*", { count: "exact", head: true })
-    .eq("type", tipo)
-    .is("deleted_at", null)
-    .gte("document_date", inicioDeMes);
-
-  const inicioDeAnio = new Date(anioActual, 0, 1).toISOString();
-  const { count: totalEsteAnio } = await supabase
-    .from("documents")
-    .select("*", { count: "exact", head: true })
-    .eq("type", tipo)
-    .is("deleted_at", null)
-    .gte("document_date", inicioDeAnio);
-
-  const { count: pendientesPdf } = await supabase
-    .from("documents")
-    .select("*", { count: "exact", head: true })
-    .eq("type", tipo)
-    .is("deleted_at", null)
-    .is("pdf_url", null);
-
-  const { data: documentosRecientes } = await supabase
-    .from("documents")
-    .select("document_date")
-    .eq("type", tipo)
-    .is("deleted_at", null)
-    .gte("document_date", new Date(anioActual - 1, ahora.getMonth(), 1).toISOString());
-
-  const { data: todosDocumentos } = await supabase
-    .from("documents")
-    .select("document_date")
-    .eq("type", tipo)
-    .is("deleted_at", null);
-
-  const { data: documentosConFirmante } = await supabase
-    .from("documents")
-    .select("signed_by")
-    .eq("type", tipo)
-    .is("deleted_at", null)
-    .not("signed_by", "is", null);
-
-  const { data: documentosConDestinatario } = await supabase
-    .from("documents")
-    .select("addressed_to")
-    .eq("type", tipo)
-    .is("deleted_at", null)
-    .not("addressed_to", "is", null);
-
-  return {
-    total: total ?? 0,
-    totalEsteMes: totalEsteMes ?? 0,
-    totalEsteAnio: totalEsteAnio ?? 0,
-    pendientesPdf: pendientesPdf ?? 0,
-    datosPorMes: calcularDatosPorMes(documentosRecientes ?? []),
-    datosPorAnio: calcularDatosPorAnio(todosDocumentos ?? []),
-    topFirmantes: calcularTop5((documentosConFirmante ?? []) as Record<string, string | null>[], "signed_by"),
-    topDestinatarios: calcularTop5((documentosConDestinatario ?? []) as Record<string, string | null>[], "addressed_to"),
-  };
 }
 
 interface TopListaProps {
@@ -181,8 +83,16 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   const params = await searchParams;
   const tipo: TipoDocumento = params.tipo === "enviado" ? "enviado" : "recibido";
-  const datos = await obtenerDatosDashboard(tipo);
+
+  const { data: stats, error } = await supabase.rpc("get_dashboard_stats", { tipo_doc: tipo });
+
+  const datos = error || !stats
+    ? { total: 0, totalEsteMes: 0, totalEsteAnio: 0, pendientesPdf: 0, topFirmantes: [], topDestinatarios: [], porMes: [], porAnio: [] }
+    : stats;
+
   const etiquetaTipo = tipo === "recibido" ? "Recibidos" : "Enviados";
+  const datosPorMes = completarMeses(datos.porMes ?? []);
+  const datosPorAnio = (datos.porAnio ?? []).map((d: { anio: string; total: number }) => ({ anio: d.anio, total: d.total }));
 
   return (
     <div className="p-6 space-y-6">
@@ -197,17 +107,17 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <TarjetaTotal titulo="Total de documentos" valor={datos.total} icono={FileText} descripcion={etiquetaTipo} />
-        <TarjetaTotal titulo="Este mes" valor={datos.totalEsteMes} icono={CalendarDays} descripcion="Mes en curso" />
-        <TarjetaTotal titulo="Este año" valor={datos.totalEsteAnio} icono={CalendarRange} descripcion="Año en curso" />
-        <TarjetaTotal titulo="Pendientes de PDF" valor={datos.pendientesPdf} icono={Clock} descripcion="Sin archivo adjunto" />
+        <TarjetaTotal titulo="Total de documentos" valor={datos.total ?? 0} icono={FileText} descripcion={etiquetaTipo} />
+        <TarjetaTotal titulo="Este mes" valor={datos.totalEsteMes ?? 0} icono={CalendarDays} descripcion="Mes en curso" />
+        <TarjetaTotal titulo="Este año" valor={datos.totalEsteAnio ?? 0} icono={CalendarRange} descripcion="Año en curso" />
+        <TarjetaTotal titulo="Pendientes de PDF" valor={datos.pendientesPdf ?? 0} icono={Clock} descripcion="Sin archivo adjunto" />
       </div>
 
-      <DashboardCharts datosPorMes={datos.datosPorMes} datosPorAnio={datos.datosPorAnio} />
+      <DashboardCharts datosPorMes={datosPorMes} datosPorAnio={datosPorAnio} />
 
       <div className="grid gap-6 md:grid-cols-2">
-        <TopLista titulo="Top 5 firmantes" items={datos.topFirmantes} sinDatosTexto="Sin firmantes registrados" />
-        <TopLista titulo="Top 5 destinatarios" items={datos.topDestinatarios} sinDatosTexto="Sin destinatarios registrados" />
+        <TopLista titulo="Top 5 firmantes" items={datos.topFirmantes ?? []} sinDatosTexto="Sin firmantes registrados" />
+        <TopLista titulo="Top 5 destinatarios" items={datos.topDestinatarios ?? []} sinDatosTexto="Sin destinatarios registrados" />
       </div>
     </div>
   );

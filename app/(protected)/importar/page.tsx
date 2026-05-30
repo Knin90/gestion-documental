@@ -51,11 +51,22 @@ function encontrarFilaEncabezado(filas: any[][]): number {
     const fila = filas[i];
     if (!fila) continue;
     const textos = fila.map((c) => (c ?? "").toString().toUpperCase().trim());
-    if (textos.includes("FECHA") || textos.includes("ASUNTO") || textos.includes("N° NOTA")) {
+    if (
+      textos.includes("FECHA") ||
+      textos.includes("DESCRIPCIÓN") ||
+      textos.includes("DESCRIPCION") ||
+      textos.includes("IDENTIFICADOR")
+    ) {
       return i;
     }
   }
   return -1;
+}
+
+function buscarIndice(encabezados: string[], opciones: string[]): number {
+  return encabezados.findIndex((h) =>
+    opciones.some((op) => h.toUpperCase().includes(op.toUpperCase()))
+  );
 }
 
 function validarYParsear(filasRaw: any[][]): ResultadoValidacion {
@@ -67,13 +78,12 @@ function validarYParsear(filasRaw: any[][]): ResultadoValidacion {
 
   const encabezados = filasRaw[idxEncabezado].map((c: any) => (c ?? "").toString().trim());
 
-  // Encontrar índices de columnas
   const idx = {
-    nota: encabezados.findIndex((h: string) => /n[°º]\s*nota/i.test(h)),
-    fecha: encabezados.findIndex((h: string) => /^fecha$/i.test(h)),
-    procedencia: encabezados.findIndex((h: string) => /procedencia/i.test(h)),
-    asunto: encabezados.findIndex((h: string) => /asunto/i.test(h)),
-    atendido: encabezados.findIndex((h: string) => /atendido|asignado/i.test(h)),
+    id: buscarIndice(encabezados, ["Identificador", "N° NOTA", "N°NOTA", "ID", "Codigo", "Código"]),
+    descripcion: buscarIndice(encabezados, ["Descripción", "Descripcion", "ASUNTO", "Detalle"]),
+    firmante: buscarIndice(encabezados, ["Firmante", "PROCEDENCIA", "Remitente", "Firma"]),
+    destinatario: buscarIndice(encabezados, ["Destinatario", "ATENDIDO", "ASIGNADO", "Para", "Dirigido"]),
+    fecha: buscarIndice(encabezados, ["Fecha"]),
   };
 
   const correctas: FilaPreview[] = [];
@@ -83,30 +93,28 @@ function validarYParsear(filasRaw: any[][]): ResultadoValidacion {
     const row = filasRaw[i];
     if (!row) continue;
 
-    // Saltar filas completamente vacías
     const tieneContenido = row.some((c: any) => c !== "" && c !== null && c !== undefined);
     if (!tieneContenido) continue;
 
-    const description = idx.asunto >= 0 ? (row[idx.asunto] ?? "").toString().trim() : "";
+    const description = idx.descripcion >= 0 ? (row[idx.descripcion] ?? "").toString().trim() : "";
     const fechaRaw = idx.fecha >= 0 ? row[idx.fecha] : "";
-    const notaRaw = idx.nota >= 0 ? (row[idx.nota] ?? "").toString().trim() : "";
+    const idRaw = idx.id >= 0 ? (row[idx.id] ?? "").toString().trim() : "";
 
-    // Saltar filas sin descripción ni fecha (probablemente basura)
     if (!description && !fechaRaw) continue;
 
     const fila: FilaPreview = {
       fila: i + 1,
-      document_id: notaRaw || null,
+      document_id: idRaw && idRaw !== "0" ? idRaw : null,
       description,
-      signed_by: idx.procedencia >= 0 ? (row[idx.procedencia] ?? "").toString().trim() || null : null,
-      addressed_to: idx.atendido >= 0 ? (row[idx.atendido] ?? "").toString().trim() || null : null,
+      signed_by: idx.firmante >= 0 ? (row[idx.firmante] ?? "").toString().trim() || null : null,
+      addressed_to: idx.destinatario >= 0 ? (row[idx.destinatario] ?? "").toString().trim() || null : null,
       document_date: parsearFecha(fechaRaw),
     };
 
     const errores: string[] = [];
-    if (!fila.description) errores.push("Asunto vacío");
+    if (!fila.description) errores.push("Descripción vacía");
     if (!fila.document_date) errores.push("Fecha inválida");
-    if (fila.description.length > 500) errores.push("Asunto muy largo (máx 500)");
+    if (fila.description.length > 500) errores.push("Descripción muy larga (máx 500)");
 
     if (errores.length > 0) {
       fila.error = errores.join(", ");
@@ -155,7 +163,7 @@ export default function ImportarPage() {
       const res = validarYParsear(filasRaw);
 
       if (res.filaEncabezado === -1) {
-        toast.error("No se encontraron las columnas. Se esperan: FECHA, ASUNTO, N° NOTA");
+        toast.error("No se encontraron las columnas esperadas");
         setProcesando(false);
         return;
       }
@@ -229,7 +237,7 @@ export default function ImportarPage() {
         <div className="rounded-xl border bg-card p-6 space-y-3">
           <h2 className="text-sm font-semibold">2. Sube el archivo Excel</h2>
           <p className="text-xs text-muted-foreground">
-            Se detectarán automáticamente las columnas: N° NOTA, FECHA, PROCEDENCIA, ASUNTO, ATENDIDO / ASIGNADO
+            Columnas esperadas: Identificador (opcional), Descripción, Firmante (opcional), Destinatario (opcional), Fecha (DD/MM/AAAA)
           </p>
           <label className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 cursor-pointer hover:bg-muted/30 transition-colors">
             <FileSpreadsheet className="h-8 w-8 text-muted-foreground mb-2" />
@@ -277,7 +285,6 @@ export default function ImportarPage() {
             )}
           </div>
 
-          {/* Errores — máximo 5 */}
           {resultado.conError.length > 0 && (
             <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 space-y-2">
               <p className="text-sm font-medium text-yellow-800">
@@ -296,16 +303,15 @@ export default function ImportarPage() {
             </div>
           )}
 
-          {/* Preview */}
           {resultado.correctas.length > 0 && (
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b">
                     <th className="px-2 py-2 text-left text-muted-foreground">Fila</th>
-                    <th className="px-2 py-2 text-left text-muted-foreground">N° Nota</th>
-                    <th className="px-2 py-2 text-left text-muted-foreground">Asunto</th>
-                    <th className="px-2 py-2 text-left text-muted-foreground">Procedencia</th>
+                    <th className="px-2 py-2 text-left text-muted-foreground">Identificador</th>
+                    <th className="px-2 py-2 text-left text-muted-foreground">Descripción</th>
+                    <th className="px-2 py-2 text-left text-muted-foreground">Firmante</th>
                     <th className="px-2 py-2 text-left text-muted-foreground">Fecha</th>
                   </tr>
                 </thead>
@@ -329,7 +335,6 @@ export default function ImportarPage() {
             </div>
           )}
 
-          {/* Botón importar */}
           {resultado.correctas.length > 0 && (
             <div className="flex gap-3 pt-2">
               <button

@@ -6,7 +6,6 @@ import { Search, FileWarning, ArrowUpDown } from "lucide-react";
 interface PageProps {
   searchParams: Promise<{
     identificador?: string;
-    dia?: string;
     mes?: string;
     anio?: string;
     tipo?: string;
@@ -15,18 +14,6 @@ interface PageProps {
 }
 
 const MESES = [
-  { valor: "01", nombre: "Enero", dias: 31 },
-  { valor: "02", nombre: "Febrero", dias: 29 },
-  { valor: "03", nombre: "Marzo", dias: 31 },
-  { valor: "04", nombre: "Abril", dias: 30 },
-  { valor: "05", nombre: "Mayo", dias: 31 },
-  { valor: "06", nombre: "Junio", dias: 30 },
-  { valor: "07", nombre: "Julio", dias: 31 },
-  { valor: "08", nombre: "Agosto", dias: 31 },
-  { valor: "09", nombre: "Septiembre", dias: 30 },
-  { valor: "10", nombre: "Octubre", dias: 31 },
-  { valor: "11", nombre: "Noviembre", dias: 30 },
-  { valor: "12", nombre: "Diciembre", dias: 31 },
 ];
 
 const anioActual = new Date().getFullYear();
@@ -40,13 +27,11 @@ export default async function BuscarPage({ searchParams }: PageProps) {
 
   const params = await searchParams;
   const identificador = params.identificador?.trim() ?? "";
-  const dia = params.dia ?? "";
   const mes = params.mes ?? "";
   const anio = params.anio ?? "";
   const tipo = params.tipo ?? "";
   const orden = params.orden === "asc" ? "asc" : "desc";
 
-  const hayBusqueda = identificador || dia || mes || anio;
 
   let documentos: any[] = [];
   let errorBusqueda = false;
@@ -66,8 +51,6 @@ export default async function BuscarPage({ searchParams }: PageProps) {
       query = query.ilike("document_id", `%${identificador}%`);
     }
 
-    if (dia && mes && anio) {
-      const fecha = `${anio}-${mes}-${dia.padStart(2, "0")}`;
       query = query.eq("document_date", fecha);
     } else if (mes && anio) {
       const ultimoDia = new Date(parseInt(anio), parseInt(mes), 0).getDate();
@@ -84,7 +67,6 @@ export default async function BuscarPage({ searchParams }: PageProps) {
       query = query
         .gte("document_date", `${anio}-01-01`)
         .lte("document_date", `${anio}-12-31`);
-    } else if (dia) {
       // Solo día sin mes/año — no tiene sentido, ignorar
     }
 
@@ -139,7 +121,7 @@ export default async function BuscarPage({ searchParams }: PageProps) {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
             <label htmlFor="anio" className="text-sm font-medium">
               Año
@@ -175,20 +157,6 @@ export default async function BuscarPage({ searchParams }: PageProps) {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="dia" className="text-sm font-medium">
-              Día
-            </label>
-            <select
-              id="dia"
-              name="dia"
-              defaultValue={dia}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
-            >
-              <option value="">Todos</option>
-              {DIAS.map((d) => (
-                <option key={d} value={String(d)}>{d}</option>
-              ))}
-            </select>
           </div>
 
           <div className="space-y-2">

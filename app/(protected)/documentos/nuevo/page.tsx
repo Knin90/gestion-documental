@@ -78,13 +78,13 @@ export default function NuevoDocumentoPage() {
 
         <div className="space-y-2">
           <label htmlFor="document_id" className="text-sm font-medium">
-            Identificador
+            N° Nota
           </label>
           <input
             id="document_id"
             name="document_id"
             type="text"
-            placeholder="Opcional"
+            placeholder="Número de nota"
             maxLength={100}
             className="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
           />
@@ -92,7 +92,7 @@ export default function NuevoDocumentoPage() {
 
         <div className="space-y-2">
           <label htmlFor="description" className="text-sm font-medium">
-            Descripción <span className="text-red-500">*</span>
+            Asunto <span className="text-red-500">*</span>
           </label>
           <textarea
             id="description"
@@ -100,20 +100,20 @@ export default function NuevoDocumentoPage() {
             required
             maxLength={500}
             rows={3}
-            placeholder="Describe el contenido del documento"
+            placeholder="Asunto del asunto"
             className="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary resize-none"
           />
         </div>
 
         <div className="space-y-2">
           <label htmlFor="signed_by" className="text-sm font-medium">
-            Firmante
+            Procedencia
           </label>
           <input
             id="signed_by"
             name="signed_by"
             type="text"
-            placeholder="Nombre de quien firma"
+            placeholder="De dónde proviene"
             maxLength={200}
             className="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
           />
@@ -121,13 +121,13 @@ export default function NuevoDocumentoPage() {
 
         <div className="space-y-2">
           <label htmlFor="addressed_to" className="text-sm font-medium">
-            Destinatario
+            Atendido / Asignado
           </label>
           <input
             id="addressed_to"
             name="addressed_to"
             type="text"
-            placeholder="A quién está dirigido"
+            placeholder="Persona asignada"
             maxLength={200}
             className="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
           />

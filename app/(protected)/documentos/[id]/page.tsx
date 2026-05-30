@@ -84,11 +84,11 @@ export default async function DetalleDocumentoPage({ params }: PageProps) {
 
       {/* Campos */}
       <div className="rounded-xl border bg-card divide-y">
-        <CampoDetalle icono={Hash} label="Identificador" valor={doc.document_id ?? "—"} />
-        <CampoDetalle icono={AlignLeft} label="Descripción" valor={doc.description} />
+        <CampoDetalle icono={Hash} label="N° Nota" valor={doc.document_id ?? "—"} />
+        <CampoDetalle icono={AlignLeft} label="Asunto" valor={doc.description} />
         <CampoDetalle icono={Calendar} label="Fecha" valor={fechaFormateada} />
-        <CampoDetalle icono={User} label="Firmante" valor={doc.signed_by ?? "—"} />
-        <CampoDetalle icono={Send} label="Destinatario" valor={doc.addressed_to ?? "—"} />
+        <CampoDetalle icono={User} label="Procedencia" valor={doc.signed_by ?? "—"} />
+        <CampoDetalle icono={Send} label="Atendido / Asignado" valor={doc.addressed_to ?? "—"} />
       </div>
 
       {/* PDF */}

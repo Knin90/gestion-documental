@@ -71,7 +71,7 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
           <input
             name="q"
             defaultValue={busqueda}
-            placeholder="Buscar por identificador..."
+            placeholder="Buscar por N° Nota..."
             className="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
           />
         </form>
@@ -109,7 +109,7 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
                 <tr className="border-b bg-muted/50">
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">ID</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Descripción</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Firmante</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Procedencia</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Fecha</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">PDF</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Acciones</th>

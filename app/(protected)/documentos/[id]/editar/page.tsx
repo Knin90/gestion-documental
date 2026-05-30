@@ -134,10 +134,10 @@ export default function EditarDocumentoPage() {
           </div>
         </div>
 
-        {/* Identificador */}
+        {/* N° Nota */}
         <div className="space-y-2">
           <label htmlFor="document_id" className="text-sm font-medium">
-            Identificador
+            N° Nota
           </label>
           <input
             id="document_id"
@@ -149,10 +149,10 @@ export default function EditarDocumentoPage() {
           />
         </div>
 
-        {/* Descripción */}
+        {/* Asunto */}
         <div className="space-y-2">
           <label htmlFor="description" className="text-sm font-medium">
-            Descripción <span className="text-red-500">*</span>
+            Asunto <span className="text-red-500">*</span>
           </label>
           <textarea
             id="description"
@@ -165,10 +165,10 @@ export default function EditarDocumentoPage() {
           />
         </div>
 
-        {/* Firmante */}
+        {/* Procedencia */}
         <div className="space-y-2">
           <label htmlFor="signed_by" className="text-sm font-medium">
-            Firmante
+            Procedencia
           </label>
           <input
             id="signed_by"
@@ -180,10 +180,10 @@ export default function EditarDocumentoPage() {
           />
         </div>
 
-        {/* Destinatario */}
+        {/* Atendido / Asignado */}
         <div className="space-y-2">
           <label htmlFor="addressed_to" className="text-sm font-medium">
-            Destinatario
+            Atendido / Asignado
           </label>
           <input
             id="addressed_to"

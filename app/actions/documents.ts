@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { documentoSchema } from "@/lib/schemas/document";
@@ -11,9 +12,14 @@ type ActionResult = {
   id?: string;
 };
 
-export async function crearDocumento(
-  formData: FormData
-): Promise<ActionResult> {
+function getAdminClient() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+export async function crearDocumento(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -31,7 +37,8 @@ export async function crearDocumento(
     return { success: false, error: resultado.error.issues[0].message };
   }
 
-  const { data, error } = await supabase
+  const admin = getAdminClient();
+  const { data, error } = await admin
     .from("documents")
     .insert({ ...resultado.data, created_by: user.id })
     .select("id")
@@ -47,10 +54,7 @@ export async function crearDocumento(
   return { success: true, id: data.id };
 }
 
-export async function actualizarDocumento(
-  id: string,
-  formData: FormData
-): Promise<ActionResult> {
+export async function actualizarDocumento(id: string, formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -68,7 +72,8 @@ export async function actualizarDocumento(
     return { success: false, error: resultado.error.issues[0].message };
   }
 
-  const { error } = await supabase
+  const admin = getAdminClient();
+  const { error } = await admin
     .from("documents")
     .update({ ...resultado.data, updated_by: user.id })
     .eq("id", id)
@@ -90,7 +95,8 @@ export async function eliminarDocumento(id: string): Promise<ActionResult> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { error } = await supabase
+  const admin = getAdminClient();
+  const { error } = await admin
     .from("documents")
     .update({ deleted_at: new Date().toISOString(), updated_by: user.id })
     .eq("id", id)
@@ -105,3 +111,4 @@ export async function eliminarDocumento(id: string): Promise<ActionResult> {
   revalidatePath("/dashboard");
   return { success: true };
 }
+// test

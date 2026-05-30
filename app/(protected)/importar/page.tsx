@@ -23,10 +23,38 @@ interface ResultadoValidacion {
   conError: FilaPreview[];
 }
 
+function buscarColumna(row: any, nombres: string[]): string {
+  for (const nombre of nombres) {
+    if (row[nombre] !== undefined && row[nombre] !== "") {
+      return row[nombre].toString().trim();
+    }
+  }
+  return "";
+}
+
+function parsearFecha(valor: any): string {
+  if (!valor) return "";
+  if (typeof valor === "number") {
+    const fecha = new Date((valor - 25569) * 86400 * 1000);
+    return fecha.toISOString().split("T")[0];
+  }
+  const texto = valor.toString().trim();
+  // DD/MM/YYYY o DD-MM-YYYY
+  const partes = texto.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (partes) {
+    return `${partes[3]}-${partes[2].padStart(2, "0")}-${partes[1].padStart(2, "0")}`;
+  }
+  // YYYY-MM-DD
+  const iso = texto.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return texto;
+  return "";
+}
+
 export default function ImportarPage() {
   const [tipo, setTipo] = useState<TipoDocumento | null>(null);
   const [archivo, setArchivo] = useState<File | null>(null);
   const [resultado, setResultado] = useState<ResultadoValidacion | null>(null);
+  const [columnasDetectadas, setColumnasDetectadas] = useState<string[]>([]);
   const [procesando, setProcesando] = useState(false);
   const [importando, setImportando] = useState(false);
   const router = useRouter();
@@ -45,39 +73,35 @@ export default function ImportarPage() {
       const hoja = workbook.Sheets[workbook.SheetNames[0]];
       const datos: any[] = utils.sheet_to_json(hoja, { defval: "" });
 
+      if (datos.length === 0) {
+        toast.error("El archivo está vacío");
+        setProcesando(false);
+        return;
+      }
+
+      const columnas = Object.keys(datos[0]);
+      setColumnasDetectadas(columnas);
+
       const correctas: FilaPreview[] = [];
       const conError: FilaPreview[] = [];
 
       datos.forEach((row, index) => {
         const fila: FilaPreview = {
           fila: index + 2,
-          document_id: row["Identificador"]?.toString().trim() || null,
-          description: row["Descripción"]?.toString().trim() || row["Descripcion"]?.toString().trim() || "",
-          signed_by: row["Firmante"]?.toString().trim() || null,
-          addressed_to: row["Destinatario"]?.toString().trim() || null,
+          document_id: buscarColumna(row, ["Identificador", "identificador", "ID", "Id", "id", "Codigo", "Código", "codigo"]) || null,
+          description: buscarColumna(row, ["Descripción", "Descripcion", "descripción", "descripcion", "DESCRIPCION", "Detalle", "detalle", "Asunto", "asunto"]),
+          signed_by: buscarColumna(row, ["Firmante", "firmante", "FIRMANTE", "Firma", "firma", "Remitente", "remitente"]) || null,
+          addressed_to: buscarColumna(row, ["Destinatario", "destinatario", "DESTINATARIO", "Para", "para", "Dirigido", "dirigido"]) || null,
           document_date: "",
         };
 
-        // Parsear fecha
-        const fechaRaw = row["Fecha"];
-        if (fechaRaw) {
-          if (typeof fechaRaw === "number") {
-            // Excel serial date
-            const fecha = new Date((fechaRaw - 25569) * 86400 * 1000);
-            fila.document_date = fecha.toISOString().split("T")[0];
-          } else {
-            const partes = fechaRaw.toString().match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-            if (partes) {
-              fila.document_date = `${partes[3]}-${partes[2].padStart(2, "0")}-${partes[1].padStart(2, "0")}`;
-            }
-          }
-        }
+        const fechaRaw = buscarColumna(row, ["Fecha", "fecha", "FECHA", "Fecha del documento", "fecha del documento"]);
+        fila.document_date = parsearFecha(fechaRaw || row["Fecha"]);
 
-        // Validar
         const errores: string[] = [];
-        if (!fila.description) errores.push("Descripción obligatoria");
-        if (!fila.document_date) errores.push("Fecha inválida o vacía");
-        if (fila.description && fila.description.length > 500) errores.push("Descripción muy larga (máx 500)");
+        if (!fila.description) errores.push("Descripción vacía");
+        if (!fila.document_date) errores.push("Fecha inválida");
+        if (fila.description && fila.description.length > 500) errores.push("Descripción muy larga");
 
         if (errores.length > 0) {
           fila.error = errores.join(", ");
@@ -186,10 +210,17 @@ export default function ImportarPage() {
         <div className="rounded-xl border bg-card p-6 space-y-4">
           <h2 className="text-sm font-semibold">3. Resumen de validación</h2>
 
+          {/* Columnas detectadas */}
+          {columnasDetectadas.length > 0 && (
+            <div className="text-xs text-muted-foreground">
+              Columnas detectadas: {columnasDetectadas.join(", ")}
+            </div>
+          )}
+
           <div className="flex gap-4">
             <div className="flex items-center gap-2 text-sm">
               <CheckCircle className="h-4 w-4 text-green-600" />
-              <span>{resultado.correctas.length} fila{resultado.correctas.length !== 1 ? "s" : ""} correcta{resultado.correctas.length !== 1 ? "s" : ""}</span>
+              <span>{resultado.correctas.length} correcta{resultado.correctas.length !== 1 ? "s" : ""}</span>
             </div>
             {resultado.conError.length > 0 && (
               <div className="flex items-center gap-2 text-sm">
@@ -199,15 +230,27 @@ export default function ImportarPage() {
             )}
           </div>
 
-          {/* Errores */}
+          {/* Errores — máximo 5 */}
           {resultado.conError.length > 0 && (
             <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 space-y-2">
-              <p className="text-sm font-medium text-yellow-800">Filas con error (no se importarán):</p>
-              {resultado.conError.map((f) => (
+              <p className="text-sm font-medium text-yellow-800">
+                {resultado.conError.length} fila{resultado.conError.length !== 1 ? "s" : ""} con error (no se importarán):
+              </p>
+              {resultado.conError.slice(0, 5).map((f) => (
                 <p key={f.fila} className="text-xs text-yellow-700">
                   Fila {f.fila}: {f.error}
                 </p>
               ))}
+              {resultado.conError.length > 5 && (
+                <p className="text-xs text-yellow-600 font-medium">
+                  ...y {resultado.conError.length - 5} error{resultado.conError.length - 5 !== 1 ? "es" : ""} más
+                </p>
+              )}
+              {resultado.correctas.length === 0 && resultado.conError.length > 10 && (
+                <p className="text-xs text-yellow-800 font-medium pt-1">
+                  Verifica que las columnas del Excel se llamen: Identificador, Descripción, Firmante, Destinatario, Fecha
+                </p>
+              )}
             </div>
           )}
 
@@ -238,7 +281,7 @@ export default function ImportarPage() {
               </table>
               {resultado.correctas.length > 10 && (
                 <p className="text-xs text-muted-foreground mt-2 px-2">
-                  ...y {resultado.correctas.length - 10} fila{resultado.correctas.length - 10 !== 1 ? "s" : ""} más
+                  ...y {resultado.correctas.length - 10} más
                 </p>
               )}
             </div>

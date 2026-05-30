@@ -19,6 +19,36 @@ function getAdminClient() {
   );
 }
 
+const TAMANO_MAXIMO_PDF = 15 * 1024 * 1024; // 15 MB
+
+async function subirPdf(archivo: File, documentId: string, userId: string) {
+  if (archivo.size > TAMANO_MAXIMO_PDF) {
+    return { error: "El PDF no puede superar 15 MB" };
+  }
+  if (archivo.type !== "application/pdf") {
+    return { error: "Solo se permiten archivos PDF" };
+  }
+
+  const admin = getAdminClient();
+  const extension = archivo.name.split(".").pop() ?? "pdf";
+  const ruta = `${userId}/${documentId}.${extension}`;
+
+  const { error } = await admin.storage
+    .from("documents-pdfs")
+    .upload(ruta, archivo, { upsert: true });
+
+  if (error) {
+    console.error("Error al subir PDF:", error.message);
+    return { error: "Error al subir el PDF" };
+  }
+
+  return {
+    pdf_url: ruta,
+    pdf_filename: archivo.name,
+    pdf_size_bytes: archivo.size,
+  };
+}
+
 export async function crearDocumento(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -49,6 +79,23 @@ export async function crearDocumento(formData: FormData): Promise<ActionResult> 
     return { success: false, error: "Error al guardar el documento" };
   }
 
+  // Subir PDF si se adjuntó
+  const archivoPdf = formData.get("pdf") as File | null;
+  if (archivoPdf && archivoPdf.size > 0) {
+    const resPdf = await subirPdf(archivoPdf, data.id, user.id);
+    if (resPdf.error) {
+      return { success: false, error: resPdf.error };
+    }
+    await admin
+      .from("documents")
+      .update({
+        pdf_url: resPdf.pdf_url,
+        pdf_filename: resPdf.pdf_filename,
+        pdf_size_bytes: resPdf.pdf_size_bytes,
+      })
+      .eq("id", data.id);
+  }
+
   revalidatePath("/documentos");
   revalidatePath("/dashboard");
   return { success: true, id: data.id };
@@ -73,9 +120,26 @@ export async function actualizarDocumento(id: string, formData: FormData): Promi
   }
 
   const admin = getAdminClient();
+
+  // Subir PDF si se adjuntó
+  const archivoPdf = formData.get("pdf") as File | null;
+  let datosPdf = {};
+
+  if (archivoPdf && archivoPdf.size > 0) {
+    const resPdf = await subirPdf(archivoPdf, id, user.id);
+    if (resPdf.error) {
+      return { success: false, error: resPdf.error };
+    }
+    datosPdf = {
+      pdf_url: resPdf.pdf_url,
+      pdf_filename: resPdf.pdf_filename,
+      pdf_size_bytes: resPdf.pdf_size_bytes,
+    };
+  }
+
   const { error } = await admin
     .from("documents")
-    .update({ ...resultado.data, updated_by: user.id })
+    .update({ ...resultado.data, ...datosPdf, updated_by: user.id })
     .eq("id", id)
     .is("deleted_at", null);
 
@@ -111,4 +175,3 @@ export async function eliminarDocumento(id: string): Promise<ActionResult> {
   revalidatePath("/dashboard");
   return { success: true };
 }
-// test

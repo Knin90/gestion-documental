@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
 import { actualizarDocumento } from "@/app/actions/documents";
 import { createClient } from "@/lib/supabase/client";
+import { FileUp } from "lucide-react";
 
 type TipoDocumento = "recibido" | "enviado";
 
@@ -17,6 +18,7 @@ interface DocumentoData {
   addressed_to: string | null;
   document_date: string;
   pdf_url: string | null;
+  pdf_filename: string | null;
 }
 
 export default function EditarDocumentoPage() {
@@ -24,6 +26,7 @@ export default function EditarDocumentoPage() {
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [archivoPdf, setArchivoPdf] = useState<File | null>(null);
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
@@ -33,7 +36,7 @@ export default function EditarDocumentoPage() {
       const supabase = createClient();
       const { data } = await supabase
         .from("documents")
-        .select("id, type, document_id, description, signed_by, addressed_to, document_date, pdf_url")
+        .select("id, type, document_id, description, signed_by, addressed_to, document_date, pdf_url, pdf_filename")
         .eq("id", id)
         .is("deleted_at", null)
         .single();
@@ -54,6 +57,11 @@ export default function EditarDocumentoPage() {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
+
+    if (archivoPdf) {
+      formData.set("pdf", archivoPdf);
+    }
+
     const resultado = await actualizarDocumento(id, formData);
 
     if (resultado.success) {
@@ -65,11 +73,25 @@ export default function EditarDocumentoPage() {
     }
   }
 
+  function handlePdfSeleccionado(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      toast.error("Solo se permiten archivos PDF");
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("El PDF no puede superar 15 MB");
+      return;
+    }
+    setArchivoPdf(file);
+  }
+
   if (cargando) {
     return (
       <div className="p-6 max-w-2xl space-y-5 animate-pulse">
         <div className="h-8 w-48 rounded-lg bg-muted" />
-        {Array.from({ length: 5 }).map((_, i) => (
+        {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="space-y-2">
             <div className="h-4 w-24 rounded bg-muted" />
             <div className="h-10 w-full rounded-lg bg-muted" />
@@ -188,17 +210,43 @@ export default function EditarDocumentoPage() {
           />
         </div>
 
-        {/* Estado PDF */}
-        <div className="rounded-lg border bg-muted/30 px-4 py-3">
-          <p className="text-sm font-medium mb-1">Archivo PDF</p>
-          {doc.pdf_url ? (
-            <p className="text-sm text-muted-foreground">
-              Este documento ya tiene un PDF adjunto. La carga de PDFs se habilitará en el Hito 4.
-            </p>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Sin PDF adjunto. La carga de PDFs se habilitará en el Hito 4.
-            </p>
+        {/* PDF */}
+        <div className="space-y-3">
+          <label className="text-sm font-medium">Archivo PDF</label>
+          {doc.pdf_url && !archivoPdf && (
+            <div className="rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+              PDF actual: {doc.pdf_filename ?? "archivo.pdf"}
+            </div>
+          )}
+          <label className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 cursor-pointer hover:bg-muted/30 transition-colors">
+            <FileUp className="h-6 w-6 text-muted-foreground mb-2" />
+            <span className="text-sm font-medium">
+              {archivoPdf
+                ? archivoPdf.name
+                : doc.pdf_url
+                  ? "Click para reemplazar PDF"
+                  : "Click para adjuntar PDF"}
+            </span>
+            {archivoPdf && (
+              <span className="text-xs text-muted-foreground mt-1">
+                {(archivoPdf.size / 1024).toFixed(1)} KB
+              </span>
+            )}
+            <input
+              type="file"
+              accept=".pdf"
+              onChange={handlePdfSeleccionado}
+              className="hidden"
+            />
+          </label>
+          {archivoPdf && (
+            <button
+              type="button"
+              onClick={() => setArchivoPdf(null)}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Cancelar cambio de PDF
+            </button>
           )}
         </div>
 

@@ -7,8 +7,6 @@ interface PageProps {
   searchParams: Promise<{
     identificador?: string;
     fecha?: string;
-    mes?: string;
-    anio?: string;
     tipo?: string;
   }>;
 }
@@ -21,11 +19,9 @@ export default async function BuscarPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const identificador = params.identificador?.trim() ?? "";
   const fecha = params.fecha ?? "";
-  const mes = params.mes ?? "";
-  const anio = params.anio ?? "";
   const tipo = params.tipo ?? "";
 
-  const hayBusqueda = identificador || fecha || mes || anio;
+  const hayBusqueda = identificador || fecha;
 
   let documentos: any[] = [];
   let errorBusqueda = false;
@@ -47,14 +43,6 @@ export default async function BuscarPage({ searchParams }: PageProps) {
 
     if (fecha) {
       query = query.eq("document_date", fecha);
-    } else if (mes) {
-      const [anioMes, mesMes] = mes.split("-");
-      const inicio = `${anioMes}-${mesMes}-01`;
-      const finDate = new Date(parseInt(anioMes), parseInt(mesMes), 0);
-      const fin = `${anioMes}-${mesMes}-${String(finDate.getDate()).padStart(2, "0")}`;
-      query = query.gte("document_date", inicio).lte("document_date", fin);
-    } else if (anio) {
-      query = query.gte("document_date", `${anio}-01-01`).lte("document_date", `${anio}-12-31`);
     }
 
     const { data, error } = await query;
@@ -75,10 +63,8 @@ export default async function BuscarPage({ searchParams }: PageProps) {
         </p>
       </div>
 
-      {/* Formulario de búsqueda */}
       <form method="GET" className="rounded-xl border bg-card p-6 space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          {/* Identificador */}
+        <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
             <label htmlFor="identificador" className="text-sm font-medium">
               Identificador
@@ -93,7 +79,19 @@ export default async function BuscarPage({ searchParams }: PageProps) {
             />
           </div>
 
-          {/* Tipo */}
+          <div className="space-y-2">
+            <label htmlFor="fecha" className="text-sm font-medium">
+              Fecha
+            </label>
+            <input
+              id="fecha"
+              name="fecha"
+              type="date"
+              defaultValue={fecha}
+              className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
+            />
+          </div>
+
           <div className="space-y-2">
             <label htmlFor="tipo" className="text-sm font-medium">
               Tipo
@@ -108,53 +106,6 @@ export default async function BuscarPage({ searchParams }: PageProps) {
               <option value="recibido">Recibidos</option>
               <option value="enviado">Enviados</option>
             </select>
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-3">
-          {/* Fecha exacta */}
-          <div className="space-y-2">
-            <label htmlFor="fecha" className="text-sm font-medium">
-              Fecha exacta
-            </label>
-            <input
-              id="fecha"
-              name="fecha"
-              type="date"
-              defaultValue={fecha}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
-            />
-          </div>
-
-          {/* Mes */}
-          <div className="space-y-2">
-            <label htmlFor="mes" className="text-sm font-medium">
-              Mes
-            </label>
-            <input
-              id="mes"
-              name="mes"
-              type="month"
-              defaultValue={mes}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
-            />
-          </div>
-
-          {/* Año */}
-          <div className="space-y-2">
-            <label htmlFor="anio" className="text-sm font-medium">
-              Año
-            </label>
-            <input
-              id="anio"
-              name="anio"
-              type="number"
-              min="2000"
-              max="2099"
-              defaultValue={anio}
-              placeholder="Ej: 2026"
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
-            />
           </div>
         </div>
 
@@ -175,7 +126,6 @@ export default async function BuscarPage({ searchParams }: PageProps) {
         </div>
       </form>
 
-      {/* Resultados */}
       {errorBusqueda && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           Error al realizar la búsqueda. Intenta de nuevo.
@@ -197,7 +147,6 @@ export default async function BuscarPage({ searchParams }: PageProps) {
             </div>
           ) : (
             <>
-              {/* Desktop */}
               <div className="hidden md:block rounded-xl border bg-card overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
@@ -262,7 +211,6 @@ export default async function BuscarPage({ searchParams }: PageProps) {
                 </table>
               </div>
 
-              {/* Mobile */}
               <div className="grid gap-3 md:hidden">
                 {documentos.map((doc) => (
                   <Link

@@ -35,7 +35,7 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
     .range(desde, desde + DOCUMENTOS_POR_PAGINA - 1);
 
   if (soloPendientes) query = query.is("pdf_url", null);
-  if (busqueda) query = query.ilike("description", `%${busqueda}%`);
+  if (busqueda) query = query.ilike("document_id", `%${busqueda}%`);
 
   const { data: documentos, count } = await query;
   const totalPaginas = Math.ceil((count ?? 0) / DOCUMENTOS_POR_PAGINA);
@@ -71,7 +71,7 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
           <input
             name="q"
             defaultValue={busqueda}
-            placeholder="Buscar por descripción..."
+            placeholder="Buscar por identificador..."
             className="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
           />
         </form>

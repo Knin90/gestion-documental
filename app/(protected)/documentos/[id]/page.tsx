@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { FileText, Calendar, User, Send, Hash, HardDrive, FileDigit } from "lucide-react";
+import { FileText, Calendar, User, Send, Hash, HardDrive, FileDigit, AlignLeft } from "lucide-react";
 import { EliminarDocumentoBoton } from "@/components/domain/eliminar-documento-boton";
 
 interface PageProps {
@@ -38,7 +38,6 @@ export default async function DetalleDocumentoPage({ params }: PageProps) {
       : `${(doc.pdf_size_bytes / (1024 * 1024)).toFixed(1)} MB`
     : null;
 
-  // Generar URL firmada si hay PDF
   let urlPdfFirmada: string | null = null;
   if (doc.pdf_url) {
     const { data: signedData } = await supabase.storage
@@ -47,8 +46,13 @@ export default async function DetalleDocumentoPage({ params }: PageProps) {
     urlPdfFirmada = signedData?.signedUrl ?? null;
   }
 
+  const tituloCorto = doc.document_id
+    ? `Documento ${doc.document_id}`
+    : "Detalle del documento";
+
   return (
     <div className="p-6 max-w-3xl space-y-6">
+      {/* Encabezado */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -65,7 +69,7 @@ export default async function DetalleDocumentoPage({ params }: PageProps) {
               </span>
             )}
           </div>
-          <h1 className="text-xl font-bold tracking-tight">{doc.description}</h1>
+          <h1 className="text-xl font-bold tracking-tight">{tituloCorto}</h1>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Link
@@ -78,13 +82,16 @@ export default async function DetalleDocumentoPage({ params }: PageProps) {
         </div>
       </div>
 
+      {/* Campos */}
       <div className="rounded-xl border bg-card divide-y">
         <CampoDetalle icono={Hash} label="Identificador" valor={doc.document_id ?? "—"} />
+        <CampoDetalle icono={AlignLeft} label="Descripción" valor={doc.description} />
         <CampoDetalle icono={Calendar} label="Fecha" valor={fechaFormateada} />
         <CampoDetalle icono={User} label="Firmante" valor={doc.signed_by ?? "—"} />
         <CampoDetalle icono={Send} label="Destinatario" valor={doc.addressed_to ?? "—"} />
       </div>
 
+      {/* PDF */}
       <div className="rounded-xl border bg-card p-6 space-y-3">
         <h2 className="text-sm font-semibold flex items-center gap-2">
           <FileText className="h-4 w-4" />
@@ -134,6 +141,7 @@ export default async function DetalleDocumentoPage({ params }: PageProps) {
         )}
       </div>
 
+      {/* Metadatos */}
       <div className="rounded-xl border bg-card p-6 space-y-2">
         <h2 className="text-sm font-semibold text-muted-foreground mb-3">Metadatos</h2>
         <p className="text-xs text-muted-foreground">

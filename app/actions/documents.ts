@@ -175,3 +175,25 @@ export async function eliminarDocumento(id: string): Promise<ActionResult> {
   revalidatePath("/dashboard");
   return { success: true };
 }
+
+export async function eliminarTodosDocumentos(tipo: "recibido" | "enviado"): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const admin = getAdminClient();
+  const { error } = await admin
+    .from("documents")
+    .update({ deleted_at: new Date().toISOString(), updated_by: user.id })
+    .eq("type", tipo)
+    .is("deleted_at", null);
+
+  if (error) {
+    console.error("Error al eliminar todos:", error.message);
+    return { success: false, error: "Error al eliminar los documentos" };
+  }
+
+  revalidatePath("/documentos");
+  revalidatePath("/dashboard");
+  return { success: true };
+}

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { FilePlus, FileWarning } from "lucide-react";
 import { SelectorTipoDashboard } from "@/components/domain/selector-tipo-dashboard";
+import { EliminarTodosBoton } from "@/components/domain/eliminar-todos-boton";
 import { EliminarDocumentoBoton } from "@/components/domain/eliminar-documento-boton";
 
 type TipoDocumento = "recibido" | "enviado";
@@ -84,6 +85,7 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
         >
           Solo pendientes de PDF
         </Link>
+        <EliminarTodosBoton tipo={tipo} total={count ?? 0} />
       </div>
 
       {/* Tabla desktop */}

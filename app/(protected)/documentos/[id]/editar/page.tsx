@@ -34,14 +34,14 @@ export default function EditarDocumentoPage() {
   useEffect(() => {
     async function cargarDocumento() {
       const supabase = createClient();
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("documents")
         .select("id, type, document_id, description, signed_by, addressed_to, document_date, pdf_url, pdf_filename")
         .eq("id", id)
         .is("deleted_at", null)
         .single();
 
-      if (!data) {
+      if (error || !data) {
         router.push("/documentos");
         return;
       }
@@ -229,7 +229,9 @@ export default function EditarDocumentoPage() {
             </span>
             {archivoPdf && (
               <span className="text-xs text-muted-foreground mt-1">
-                {(archivoPdf.size / 1024).toFixed(1)} KB
+                {archivoPdf.size >= 1024 * 1024
+                  ? `${(archivoPdf.size / (1024 * 1024)).toFixed(1)} MB`
+                  : `${(archivoPdf.size / 1024).toFixed(1)} KB`}
               </span>
             )}
             <input

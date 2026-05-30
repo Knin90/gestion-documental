@@ -109,7 +109,7 @@ export default async function DetalleDocumentoPage({ params }: PageProps) {
                 <span>{doc.pdf_pages} página{doc.pdf_pages !== 1 ? "s" : ""}</span>
               )}
             </div>
-            
+            <a
               href={urlPdfFirmada}
               target="_blank"
               rel="noopener noreferrer"

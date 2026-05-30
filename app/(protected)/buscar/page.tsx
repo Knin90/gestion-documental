@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Search, FileWarning, ArrowUpDown } from "lucide-react";
+import { Search, FileWarning } from "lucide-react";
 
 interface PageProps {
   searchParams: Promise<{
@@ -14,11 +14,22 @@ interface PageProps {
 }
 
 const MESES = [
+  { valor: "01", nombre: "Enero" },
+  { valor: "02", nombre: "Febrero" },
+  { valor: "03", nombre: "Marzo" },
+  { valor: "04", nombre: "Abril" },
+  { valor: "05", nombre: "Mayo" },
+  { valor: "06", nombre: "Junio" },
+  { valor: "07", nombre: "Julio" },
+  { valor: "08", nombre: "Agosto" },
+  { valor: "09", nombre: "Septiembre" },
+  { valor: "10", nombre: "Octubre" },
+  { valor: "11", nombre: "Noviembre" },
+  { valor: "12", nombre: "Diciembre" },
 ];
 
 const anioActual = new Date().getFullYear();
 const ANIOS = Array.from({ length: 10 }, (_, i) => anioActual - i);
-const DIAS = Array.from({ length: 31 }, (_, i) => i + 1);
 
 export default async function BuscarPage({ searchParams }: PageProps) {
   const supabase = await createClient();
@@ -32,6 +43,7 @@ export default async function BuscarPage({ searchParams }: PageProps) {
   const tipo = params.tipo ?? "";
   const orden = params.orden === "asc" ? "asc" : "desc";
 
+  const hayBusqueda = identificador || mes || anio;
 
   let documentos: any[] = [];
   let errorBusqueda = false;
@@ -51,8 +63,7 @@ export default async function BuscarPage({ searchParams }: PageProps) {
       query = query.ilike("document_id", `%${identificador}%`);
     }
 
-      query = query.eq("document_date", fecha);
-    } else if (mes && anio) {
+    if (mes && anio) {
       const ultimoDia = new Date(parseInt(anio), parseInt(mes), 0).getDate();
       query = query
         .gte("document_date", `${anio}-${mes}-01`)
@@ -67,7 +78,6 @@ export default async function BuscarPage({ searchParams }: PageProps) {
       query = query
         .gte("document_date", `${anio}-01-01`)
         .lte("document_date", `${anio}-12-31`);
-      // Solo día sin mes/año — no tiene sentido, ignorar
     }
 
     const { data, error } = await query;
@@ -84,7 +94,7 @@ export default async function BuscarPage({ searchParams }: PageProps) {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Buscar documentos</h1>
         <p className="text-sm text-muted-foreground">
-          Busca por identificador, fecha o tipo
+          Busca por identificador, mes, año o tipo
         </p>
       </div>
 
@@ -154,9 +164,6 @@ export default async function BuscarPage({ searchParams }: PageProps) {
                 <option key={m.valor} value={m.valor}>{m.nombre}</option>
               ))}
             </select>
-          </div>
-
-          <div className="space-y-2">
           </div>
 
           <div className="space-y-2">

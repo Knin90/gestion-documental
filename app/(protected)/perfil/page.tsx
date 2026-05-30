@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { User, Mail, Shield, KeyRound } from "lucide-react";
+import { User, Mail, Shield, KeyRound, Eye, EyeOff } from "lucide-react";
 
 export default function PerfilPage() {
   const [nombre, setNombre] = useState("");
@@ -12,9 +12,10 @@ export default function PerfilPage() {
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
 
-  const [passwordActual, setPasswordActual] = useState("");
   const [passwordNueva, setPasswordNueva] = useState("");
   const [passwordConfirmar, setPasswordConfirmar] = useState("");
+  const [verPassword, setVerPassword] = useState(false);
+  const [verConfirmar, setVerConfirmar] = useState(false);
   const [cambiandoPassword, setCambiandoPassword] = useState(false);
 
   const supabase = createClient();
@@ -70,7 +71,6 @@ export default function PerfilPage() {
       toast.error(error.message || "Error al cambiar la contraseña");
     } else {
       toast.success("Contraseña actualizada");
-      setPasswordActual("");
       setPasswordNueva("");
       setPasswordConfirmar("");
     }
@@ -102,7 +102,6 @@ export default function PerfilPage() {
         </p>
       </div>
 
-      {/* Información */}
       <form onSubmit={handleGuardarNombre} className="rounded-xl border bg-card p-6 space-y-4">
         <h2 className="text-sm font-semibold flex items-center gap-2">
           <User className="h-4 w-4" />
@@ -150,7 +149,6 @@ export default function PerfilPage() {
         </button>
       </form>
 
-      {/* Cambiar contraseña */}
       <form onSubmit={handleCambiarPassword} className="rounded-xl border bg-card p-6 space-y-4">
         <h2 className="text-sm font-semibold flex items-center gap-2">
           <KeyRound className="h-4 w-4" />
@@ -161,28 +159,46 @@ export default function PerfilPage() {
           <label htmlFor="password-nueva" className="text-sm font-medium">
             Nueva contraseña
           </label>
-          <input
-            id="password-nueva"
-            type="password"
-            value={passwordNueva}
-            onChange={(e) => setPasswordNueva(e.target.value)}
-            placeholder="Mínimo 6 caracteres"
-            className="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
-          />
+          <div className="relative">
+            <input
+              id="password-nueva"
+              type={verPassword ? "text" : "password"}
+              value={passwordNueva}
+              onChange={(e) => setPasswordNueva(e.target.value)}
+              placeholder="Mínimo 6 caracteres"
+              className="w-full rounded-lg border bg-background px-3 py-2 pr-10 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
+            />
+            <button
+              type="button"
+              onClick={() => setVerPassword(!verPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {verPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
 
         <div className="space-y-2">
           <label htmlFor="password-confirmar" className="text-sm font-medium">
             Confirmar contraseña
           </label>
-          <input
-            id="password-confirmar"
-            type="password"
-            value={passwordConfirmar}
-            onChange={(e) => setPasswordConfirmar(e.target.value)}
-            placeholder="Repite la contraseña"
-            className="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
-          />
+          <div className="relative">
+            <input
+              id="password-confirmar"
+              type={verConfirmar ? "text" : "password"}
+              value={passwordConfirmar}
+              onChange={(e) => setPasswordConfirmar(e.target.value)}
+              placeholder="Repite la contraseña"
+              className="w-full rounded-lg border bg-background px-3 py-2 pr-10 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
+            />
+            <button
+              type="button"
+              onClick={() => setVerConfirmar(!verConfirmar)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {verConfirmar ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
 
         <button

@@ -7,6 +7,8 @@ interface PageProps {
   searchParams: Promise<{
     identificador?: string;
     fecha?: string;
+    mes?: string;
+    anio?: string;
     tipo?: string;
   }>;
 }
@@ -19,9 +21,11 @@ export default async function BuscarPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const identificador = params.identificador?.trim() ?? "";
   const fecha = params.fecha ?? "";
+  const mes = params.mes ?? "";
+  const anio = params.anio ?? "";
   const tipo = params.tipo ?? "";
 
-  const hayBusqueda = identificador || fecha;
+  const hayBusqueda = identificador || fecha || mes || anio;
 
   let documentos: any[] = [];
   let errorBusqueda = false;
@@ -43,6 +47,16 @@ export default async function BuscarPage({ searchParams }: PageProps) {
 
     if (fecha) {
       query = query.eq("document_date", fecha);
+    } else if (mes) {
+      const [anioMes, mesMes] = mes.split("-");
+      const ultimoDia = new Date(parseInt(anioMes), parseInt(mesMes), 0).getDate();
+      query = query
+        .gte("document_date", `${anioMes}-${mesMes}-01`)
+        .lte("document_date", `${anioMes}-${mesMes}-${String(ultimoDia).padStart(2, "0")}`);
+    } else if (anio) {
+      query = query
+        .gte("document_date", `${anio}-01-01`)
+        .lte("document_date", `${anio}-12-31`);
     }
 
     const { data, error } = await query;
@@ -59,12 +73,12 @@ export default async function BuscarPage({ searchParams }: PageProps) {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Buscar documentos</h1>
         <p className="text-sm text-muted-foreground">
-          Busca por identificador, fecha o tipo
+          Busca por identificador, fecha, mes, año o tipo
         </p>
       </div>
 
       <form method="GET" className="rounded-xl border bg-card p-6 space-y-4">
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <label htmlFor="identificador" className="text-sm font-medium">
               Identificador
@@ -76,19 +90,6 @@ export default async function BuscarPage({ searchParams }: PageProps) {
               defaultValue={identificador}
               placeholder="Buscar por ID del documento"
               className="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="fecha" className="text-sm font-medium">
-              Fecha
-            </label>
-            <input
-              id="fecha"
-              name="fecha"
-              type="date"
-              defaultValue={fecha}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
             />
           </div>
 
@@ -108,6 +109,54 @@ export default async function BuscarPage({ searchParams }: PageProps) {
             </select>
           </div>
         </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="space-y-2">
+            <label htmlFor="fecha" className="text-sm font-medium">
+              Fecha exacta
+            </label>
+            <input
+              id="fecha"
+              name="fecha"
+              type="date"
+              defaultValue={fecha}
+              className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="mes" className="text-sm font-medium">
+              Mes
+            </label>
+            <input
+              id="mes"
+              name="mes"
+              type="month"
+              defaultValue={mes}
+              className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="anio" className="text-sm font-medium">
+              Año
+            </label>
+            <input
+              id="anio"
+              name="anio"
+              type="number"
+              min="2000"
+              max="2099"
+              defaultValue={anio}
+              placeholder="Ej: 2026"
+              className="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
+            />
+          </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          Si usas fecha exacta, mes y año se ignoran. Si usas mes, el año se ignora.
+        </p>
 
         <div className="flex gap-3 pt-2">
           <button

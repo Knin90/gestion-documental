@@ -38,7 +38,14 @@ export default async function DetalleDocumentoPage({ params }: PageProps) {
       : `${(doc.pdf_size_bytes / (1024 * 1024)).toFixed(1)} MB`
     : null;
 
-  const urlPdf = doc.pdf_url as string | null;
+  // Generar URL firmada si hay PDF
+  let urlPdfFirmada: string | null = null;
+  if (doc.pdf_url) {
+    const { data: signedData } = await supabase.storage
+      .from("documents-pdfs")
+      .createSignedUrl(doc.pdf_url, 3600);
+    urlPdfFirmada = signedData?.signedUrl ?? null;
+  }
 
   return (
     <div className="p-6 max-w-3xl space-y-6">
@@ -83,7 +90,7 @@ export default async function DetalleDocumentoPage({ params }: PageProps) {
           <FileText className="h-4 w-4" />
           Archivo PDF
         </h2>
-        {urlPdf ? (
+        {urlPdfFirmada ? (
           <div className="space-y-3">
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
               {doc.pdf_filename && (
@@ -102,8 +109,8 @@ export default async function DetalleDocumentoPage({ params }: PageProps) {
                 <span>{doc.pdf_pages} página{doc.pdf_pages !== 1 ? "s" : ""}</span>
               )}
             </div>
-            <a
-              href={urlPdf}
+            
+              href={urlPdfFirmada}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-lg bg-sidebar-primary px-4 py-2 text-sm font-medium text-sidebar-primary-foreground hover:opacity-90 transition-opacity"

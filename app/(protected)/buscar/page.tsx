@@ -13,6 +13,24 @@ interface PageProps {
   }>;
 }
 
+const MESES = [
+  { valor: "01", nombre: "Enero" },
+  { valor: "02", nombre: "Febrero" },
+  { valor: "03", nombre: "Marzo" },
+  { valor: "04", nombre: "Abril" },
+  { valor: "05", nombre: "Mayo" },
+  { valor: "06", nombre: "Junio" },
+  { valor: "07", nombre: "Julio" },
+  { valor: "08", nombre: "Agosto" },
+  { valor: "09", nombre: "Septiembre" },
+  { valor: "10", nombre: "Octubre" },
+  { valor: "11", nombre: "Noviembre" },
+  { valor: "12", nombre: "Diciembre" },
+];
+
+const anioActual = new Date().getFullYear();
+const ANIOS = Array.from({ length: 10 }, (_, i) => anioActual - i);
+
 export default async function BuscarPage({ searchParams }: PageProps) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -47,12 +65,17 @@ export default async function BuscarPage({ searchParams }: PageProps) {
 
     if (fecha) {
       query = query.eq("document_date", fecha);
-    } else if (mes) {
-      const [anioMes, mesMes] = mes.split("-");
-      const ultimoDia = new Date(parseInt(anioMes), parseInt(mesMes), 0).getDate();
+    } else if (mes && anio) {
+      const ultimoDia = new Date(parseInt(anio), parseInt(mes), 0).getDate();
       query = query
-        .gte("document_date", `${anioMes}-${mesMes}-01`)
-        .lte("document_date", `${anioMes}-${mesMes}-${String(ultimoDia).padStart(2, "0")}`);
+        .gte("document_date", `${anio}-${mes}-01`)
+        .lte("document_date", `${anio}-${mes}-${String(ultimoDia).padStart(2, "0")}`);
+    } else if (mes) {
+      const a = anioActual;
+      const ultimoDia = new Date(a, parseInt(mes), 0).getDate();
+      query = query
+        .gte("document_date", `${a}-${mes}-01`)
+        .lte("document_date", `${a}-${mes}-${String(ultimoDia).padStart(2, "0")}`);
     } else if (anio) {
       query = query
         .gte("document_date", `${anio}-01-01`)
@@ -128,34 +151,39 @@ export default async function BuscarPage({ searchParams }: PageProps) {
             <label htmlFor="mes" className="text-sm font-medium">
               Mes
             </label>
-            <input
+            <select
               id="mes"
               name="mes"
-              type="month"
               defaultValue={mes}
               className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
-            />
+            >
+              <option value="">Todos los meses</option>
+              {MESES.map((m) => (
+                <option key={m.valor} value={m.valor}>{m.nombre}</option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-2">
             <label htmlFor="anio" className="text-sm font-medium">
               Año
             </label>
-            <input
+            <select
               id="anio"
               name="anio"
-              type="number"
-              min="2000"
-              max="2099"
               defaultValue={anio}
-              placeholder="Ej: 2026"
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
-            />
+              className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
+            >
+              <option value="">Todos los años</option>
+              {ANIOS.map((a) => (
+                <option key={a} value={String(a)}>{a}</option>
+              ))}
+            </select>
           </div>
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Si usas fecha exacta, mes y año se ignoran. Si usas mes, el año se ignora.
+          Si usas fecha exacta, mes y año se ignoran. Puedes combinar mes + año para filtrar un mes específico.
         </p>
 
         <div className="flex gap-3 pt-2">

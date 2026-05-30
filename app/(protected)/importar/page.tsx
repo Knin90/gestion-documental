@@ -21,40 +21,113 @@ interface FilaPreview {
 interface ResultadoValidacion {
   correctas: FilaPreview[];
   conError: FilaPreview[];
+  columnasDetectadas: string[];
+  filaEncabezado: number;
 }
 
-function buscarColumna(row: any, nombres: string[]): string {
-  for (const nombre of nombres) {
-    if (row[nombre] !== undefined && row[nombre] !== "") {
-      return row[nombre].toString().trim();
-    }
-  }
-  return "";
+function excelSerialToDate(serial: number): string {
+  const fecha = new Date((serial - 25569) * 86400 * 1000);
+  const y = fecha.getUTCFullYear();
+  const m = String(fecha.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(fecha.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 function parsearFecha(valor: any): string {
-  if (!valor) return "";
-  if (typeof valor === "number") {
-    const fecha = new Date((valor - 25569) * 86400 * 1000);
-    return fecha.toISOString().split("T")[0];
+  if (!valor && valor !== 0) return "";
+  if (typeof valor === "number" && valor > 40000 && valor < 60000) {
+    return excelSerialToDate(valor);
   }
   const texto = valor.toString().trim();
-  // DD/MM/YYYY o DD-MM-YYYY
-  const partes = texto.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-  if (partes) {
-    return `${partes[3]}-${partes[2].padStart(2, "0")}-${partes[1].padStart(2, "0")}`;
-  }
-  // YYYY-MM-DD
-  const iso = texto.match(/(\d{4})-(\d{2})-(\d{2})/);
-  if (iso) return texto;
+  const ddmmyyyy = texto.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (ddmmyyyy) return `${ddmmyyyy[3]}-${ddmmyyyy[2].padStart(2, "0")}-${ddmmyyyy[1].padStart(2, "0")}`;
+  const iso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return texto.substring(0, 10);
   return "";
+}
+
+function encontrarFilaEncabezado(filas: any[][]): number {
+  for (let i = 0; i < Math.min(20, filas.length); i++) {
+    const fila = filas[i];
+    if (!fila) continue;
+    const textos = fila.map((c) => (c ?? "").toString().toUpperCase().trim());
+    if (textos.includes("FECHA") || textos.includes("ASUNTO") || textos.includes("N° NOTA")) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function validarYParsear(filasRaw: any[][]): ResultadoValidacion {
+  const idxEncabezado = encontrarFilaEncabezado(filasRaw);
+
+  if (idxEncabezado === -1) {
+    return { correctas: [], conError: [], columnasDetectadas: [], filaEncabezado: -1 };
+  }
+
+  const encabezados = filasRaw[idxEncabezado].map((c: any) => (c ?? "").toString().trim());
+
+  // Encontrar índices de columnas
+  const idx = {
+    nota: encabezados.findIndex((h: string) => /n[°º]\s*nota/i.test(h)),
+    fecha: encabezados.findIndex((h: string) => /^fecha$/i.test(h)),
+    procedencia: encabezados.findIndex((h: string) => /procedencia/i.test(h)),
+    asunto: encabezados.findIndex((h: string) => /asunto/i.test(h)),
+    atendido: encabezados.findIndex((h: string) => /atendido|asignado/i.test(h)),
+  };
+
+  const correctas: FilaPreview[] = [];
+  const conError: FilaPreview[] = [];
+
+  for (let i = idxEncabezado + 1; i < filasRaw.length; i++) {
+    const row = filasRaw[i];
+    if (!row) continue;
+
+    // Saltar filas completamente vacías
+    const tieneContenido = row.some((c: any) => c !== "" && c !== null && c !== undefined);
+    if (!tieneContenido) continue;
+
+    const description = idx.asunto >= 0 ? (row[idx.asunto] ?? "").toString().trim() : "";
+    const fechaRaw = idx.fecha >= 0 ? row[idx.fecha] : "";
+    const notaRaw = idx.nota >= 0 ? (row[idx.nota] ?? "").toString().trim() : "";
+
+    // Saltar filas sin descripción ni fecha (probablemente basura)
+    if (!description && !fechaRaw) continue;
+
+    const fila: FilaPreview = {
+      fila: i + 1,
+      document_id: notaRaw || null,
+      description,
+      signed_by: idx.procedencia >= 0 ? (row[idx.procedencia] ?? "").toString().trim() || null : null,
+      addressed_to: idx.atendido >= 0 ? (row[idx.atendido] ?? "").toString().trim() || null : null,
+      document_date: parsearFecha(fechaRaw),
+    };
+
+    const errores: string[] = [];
+    if (!fila.description) errores.push("Asunto vacío");
+    if (!fila.document_date) errores.push("Fecha inválida");
+    if (fila.description.length > 500) errores.push("Asunto muy largo (máx 500)");
+
+    if (errores.length > 0) {
+      fila.error = errores.join(", ");
+      conError.push(fila);
+    } else {
+      correctas.push(fila);
+    }
+  }
+
+  return {
+    correctas,
+    conError,
+    columnasDetectadas: encabezados.filter((h: string) => h !== ""),
+    filaEncabezado: idxEncabezado + 1,
+  };
 }
 
 export default function ImportarPage() {
   const [tipo, setTipo] = useState<TipoDocumento | null>(null);
   const [archivo, setArchivo] = useState<File | null>(null);
   const [resultado, setResultado] = useState<ResultadoValidacion | null>(null);
-  const [columnasDetectadas, setColumnasDetectadas] = useState<string[]>([]);
   const [procesando, setProcesando] = useState(false);
   const [importando, setImportando] = useState(false);
   const router = useRouter();
@@ -71,47 +144,23 @@ export default function ImportarPage() {
       const buffer = await file.arrayBuffer();
       const workbook = read(buffer, { type: "array" });
       const hoja = workbook.Sheets[workbook.SheetNames[0]];
-      const datos: any[] = utils.sheet_to_json(hoja, { defval: "" });
+      const filasRaw: any[][] = utils.sheet_to_json(hoja, { defval: "", header: 1 });
 
-      if (datos.length === 0) {
+      if (filasRaw.length === 0) {
         toast.error("El archivo está vacío");
         setProcesando(false);
         return;
       }
 
-      const columnas = Object.keys(datos[0]);
-      setColumnasDetectadas(columnas);
+      const res = validarYParsear(filasRaw);
 
-      const correctas: FilaPreview[] = [];
-      const conError: FilaPreview[] = [];
+      if (res.filaEncabezado === -1) {
+        toast.error("No se encontraron las columnas. Se esperan: FECHA, ASUNTO, N° NOTA");
+        setProcesando(false);
+        return;
+      }
 
-      datos.forEach((row, index) => {
-        const fila: FilaPreview = {
-          fila: index + 2,
-          document_id: buscarColumna(row, ["Identificador", "identificador", "ID", "Id", "id", "Codigo", "Código", "codigo"]) || null,
-          description: buscarColumna(row, ["Descripción", "Descripcion", "descripción", "descripcion", "DESCRIPCION", "Detalle", "detalle", "Asunto", "asunto"]),
-          signed_by: buscarColumna(row, ["Firmante", "firmante", "FIRMANTE", "Firma", "firma", "Remitente", "remitente"]) || null,
-          addressed_to: buscarColumna(row, ["Destinatario", "destinatario", "DESTINATARIO", "Para", "para", "Dirigido", "dirigido"]) || null,
-          document_date: "",
-        };
-
-        const fechaRaw = buscarColumna(row, ["Fecha", "fecha", "FECHA", "Fecha del documento", "fecha del documento"]);
-        fila.document_date = parsearFecha(fechaRaw || row["Fecha"]);
-
-        const errores: string[] = [];
-        if (!fila.description) errores.push("Descripción vacía");
-        if (!fila.document_date) errores.push("Fecha inválida");
-        if (fila.description && fila.description.length > 500) errores.push("Descripción muy larga");
-
-        if (errores.length > 0) {
-          fila.error = errores.join(", ");
-          conError.push(fila);
-        } else {
-          correctas.push(fila);
-        }
-      });
-
-      setResultado({ correctas, conError });
+      setResultado(res);
     } catch (err) {
       toast.error("Error al leer el archivo Excel");
       console.error("Error leyendo Excel:", err);
@@ -180,7 +229,7 @@ export default function ImportarPage() {
         <div className="rounded-xl border bg-card p-6 space-y-3">
           <h2 className="text-sm font-semibold">2. Sube el archivo Excel</h2>
           <p className="text-xs text-muted-foreground">
-            Columnas esperadas: Identificador (opcional), Descripción, Firmante (opcional), Destinatario (opcional), Fecha (DD/MM/AAAA)
+            Se detectarán automáticamente las columnas: N° NOTA, FECHA, PROCEDENCIA, ASUNTO, ATENDIDO / ASIGNADO
           </p>
           <label className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 cursor-pointer hover:bg-muted/30 transition-colors">
             <FileSpreadsheet className="h-8 w-8 text-muted-foreground mb-2" />
@@ -210,12 +259,10 @@ export default function ImportarPage() {
         <div className="rounded-xl border bg-card p-6 space-y-4">
           <h2 className="text-sm font-semibold">3. Resumen de validación</h2>
 
-          {/* Columnas detectadas */}
-          {columnasDetectadas.length > 0 && (
-            <div className="text-xs text-muted-foreground">
-              Columnas detectadas: {columnasDetectadas.join(", ")}
-            </div>
-          )}
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>Encabezado detectado en fila {resultado.filaEncabezado}</p>
+            <p>Columnas: {resultado.columnasDetectadas.join(" · ")}</p>
+          </div>
 
           <div className="flex gap-4">
             <div className="flex items-center gap-2 text-sm">
@@ -246,11 +293,6 @@ export default function ImportarPage() {
                   ...y {resultado.conError.length - 5} error{resultado.conError.length - 5 !== 1 ? "es" : ""} más
                 </p>
               )}
-              {resultado.correctas.length === 0 && resultado.conError.length > 10 && (
-                <p className="text-xs text-yellow-800 font-medium pt-1">
-                  Verifica que las columnas del Excel se llamen: Identificador, Descripción, Firmante, Destinatario, Fecha
-                </p>
-              )}
             </div>
           )}
 
@@ -261,9 +303,9 @@ export default function ImportarPage() {
                 <thead>
                   <tr className="border-b">
                     <th className="px-2 py-2 text-left text-muted-foreground">Fila</th>
-                    <th className="px-2 py-2 text-left text-muted-foreground">ID</th>
-                    <th className="px-2 py-2 text-left text-muted-foreground">Descripción</th>
-                    <th className="px-2 py-2 text-left text-muted-foreground">Firmante</th>
+                    <th className="px-2 py-2 text-left text-muted-foreground">N° Nota</th>
+                    <th className="px-2 py-2 text-left text-muted-foreground">Asunto</th>
+                    <th className="px-2 py-2 text-left text-muted-foreground">Procedencia</th>
                     <th className="px-2 py-2 text-left text-muted-foreground">Fecha</th>
                   </tr>
                 </thead>

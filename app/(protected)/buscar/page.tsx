@@ -1,35 +1,37 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Search, FileWarning } from "lucide-react";
+import { Search, FileWarning, ArrowUpDown } from "lucide-react";
 
 interface PageProps {
   searchParams: Promise<{
     identificador?: string;
-    fecha?: string;
+    dia?: string;
     mes?: string;
     anio?: string;
     tipo?: string;
+    orden?: string;
   }>;
 }
 
 const MESES = [
-  { valor: "01", nombre: "Enero" },
-  { valor: "02", nombre: "Febrero" },
-  { valor: "03", nombre: "Marzo" },
-  { valor: "04", nombre: "Abril" },
-  { valor: "05", nombre: "Mayo" },
-  { valor: "06", nombre: "Junio" },
-  { valor: "07", nombre: "Julio" },
-  { valor: "08", nombre: "Agosto" },
-  { valor: "09", nombre: "Septiembre" },
-  { valor: "10", nombre: "Octubre" },
-  { valor: "11", nombre: "Noviembre" },
-  { valor: "12", nombre: "Diciembre" },
+  { valor: "01", nombre: "Enero", dias: 31 },
+  { valor: "02", nombre: "Febrero", dias: 29 },
+  { valor: "03", nombre: "Marzo", dias: 31 },
+  { valor: "04", nombre: "Abril", dias: 30 },
+  { valor: "05", nombre: "Mayo", dias: 31 },
+  { valor: "06", nombre: "Junio", dias: 30 },
+  { valor: "07", nombre: "Julio", dias: 31 },
+  { valor: "08", nombre: "Agosto", dias: 31 },
+  { valor: "09", nombre: "Septiembre", dias: 30 },
+  { valor: "10", nombre: "Octubre", dias: 31 },
+  { valor: "11", nombre: "Noviembre", dias: 30 },
+  { valor: "12", nombre: "Diciembre", dias: 31 },
 ];
 
 const anioActual = new Date().getFullYear();
 const ANIOS = Array.from({ length: 10 }, (_, i) => anioActual - i);
+const DIAS = Array.from({ length: 31 }, (_, i) => i + 1);
 
 export default async function BuscarPage({ searchParams }: PageProps) {
   const supabase = await createClient();
@@ -38,12 +40,13 @@ export default async function BuscarPage({ searchParams }: PageProps) {
 
   const params = await searchParams;
   const identificador = params.identificador?.trim() ?? "";
-  const fecha = params.fecha ?? "";
+  const dia = params.dia ?? "";
   const mes = params.mes ?? "";
   const anio = params.anio ?? "";
   const tipo = params.tipo ?? "";
+  const orden = params.orden === "asc" ? "asc" : "desc";
 
-  const hayBusqueda = identificador || fecha || mes || anio;
+  const hayBusqueda = identificador || dia || mes || anio;
 
   let documentos: any[] = [];
   let errorBusqueda = false;
@@ -53,7 +56,7 @@ export default async function BuscarPage({ searchParams }: PageProps) {
       .from("documents")
       .select("id, document_id, description, type, document_date, pdf_url, signed_by")
       .is("deleted_at", null)
-      .order("document_date", { ascending: false });
+      .order("document_date", { ascending: orden === "asc" });
 
     if (tipo === "recibido" || tipo === "enviado") {
       query = query.eq("type", tipo);
@@ -63,7 +66,8 @@ export default async function BuscarPage({ searchParams }: PageProps) {
       query = query.ilike("document_id", `%${identificador}%`);
     }
 
-    if (fecha) {
+    if (dia && mes && anio) {
+      const fecha = `${anio}-${mes}-${dia.padStart(2, "0")}`;
       query = query.eq("document_date", fecha);
     } else if (mes && anio) {
       const ultimoDia = new Date(parseInt(anio), parseInt(mes), 0).getDate();
@@ -80,6 +84,8 @@ export default async function BuscarPage({ searchParams }: PageProps) {
       query = query
         .gte("document_date", `${anio}-01-01`)
         .lte("document_date", `${anio}-12-31`);
+    } else if (dia) {
+      // Solo día sin mes/año — no tiene sentido, ignorar
     }
 
     const { data, error } = await query;
@@ -96,7 +102,7 @@ export default async function BuscarPage({ searchParams }: PageProps) {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Buscar documentos</h1>
         <p className="text-sm text-muted-foreground">
-          Busca por identificador, fecha, mes, año o tipo
+          Busca por identificador, fecha o tipo
         </p>
       </div>
 
@@ -133,18 +139,22 @@ export default async function BuscarPage({ searchParams }: PageProps) {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-4">
           <div className="space-y-2">
-            <label htmlFor="fecha" className="text-sm font-medium">
-              Fecha exacta
+            <label htmlFor="anio" className="text-sm font-medium">
+              Año
             </label>
-            <input
-              id="fecha"
-              name="fecha"
-              type="date"
-              defaultValue={fecha}
+            <select
+              id="anio"
+              name="anio"
+              defaultValue={anio}
               className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
-            />
+            >
+              <option value="">Todos</option>
+              {ANIOS.map((a) => (
+                <option key={a} value={String(a)}>{a}</option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-2">
@@ -157,7 +167,7 @@ export default async function BuscarPage({ searchParams }: PageProps) {
               defaultValue={mes}
               className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
             >
-              <option value="">Todos los meses</option>
+              <option value="">Todos</option>
               {MESES.map((m) => (
                 <option key={m.valor} value={m.valor}>{m.nombre}</option>
               ))}
@@ -165,26 +175,37 @@ export default async function BuscarPage({ searchParams }: PageProps) {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="anio" className="text-sm font-medium">
-              Año
+            <label htmlFor="dia" className="text-sm font-medium">
+              Día
             </label>
             <select
-              id="anio"
-              name="anio"
-              defaultValue={anio}
+              id="dia"
+              name="dia"
+              defaultValue={dia}
               className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
             >
-              <option value="">Todos los años</option>
-              {ANIOS.map((a) => (
-                <option key={a} value={String(a)}>{a}</option>
+              <option value="">Todos</option>
+              {DIAS.map((d) => (
+                <option key={d} value={String(d)}>{d}</option>
               ))}
             </select>
           </div>
-        </div>
 
-        <p className="text-xs text-muted-foreground">
-          Si usas fecha exacta, mes y año se ignoran. Puedes combinar mes + año para filtrar un mes específico.
-        </p>
+          <div className="space-y-2">
+            <label htmlFor="orden" className="text-sm font-medium">
+              Orden
+            </label>
+            <select
+              id="orden"
+              name="orden"
+              defaultValue={orden}
+              className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
+            >
+              <option value="desc">Más reciente primero</option>
+              <option value="asc">Más antiguo primero</option>
+            </select>
+          </div>
+        </div>
 
         <div className="flex gap-3 pt-2">
           <button
@@ -214,7 +235,7 @@ export default async function BuscarPage({ searchParams }: PageProps) {
           <p className="text-sm text-muted-foreground">
             {documentos.length === 0
               ? "Sin resultados para esta búsqueda"
-              : `${documentos.length} resultado${documentos.length !== 1 ? "s" : ""} encontrado${documentos.length !== 1 ? "s" : ""}`}
+              : `${documentos.length} resultado${documentos.length !== 1 ? "s" : ""} encontrado${documentos.length !== 1 ? "s" : ""} — ${orden === "desc" ? "más reciente primero" : "más antiguo primero"}`}
           </p>
 
           {documentos.length === 0 ? (

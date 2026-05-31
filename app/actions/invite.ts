@@ -42,7 +42,6 @@ export async function invitarUsuario(nombre: string, correo: string): Promise<Ac
     return { success: false, error: "Nombre y correo son obligatorios" };
   }
 
-  // Verificar que no existe
   const { data: existe } = await admin
     .from("allowed_emails")
     .select("id")
@@ -51,11 +50,9 @@ export async function invitarUsuario(nombre: string, correo: string): Promise<Ac
 
   if (existe) return { success: false, error: "Este correo ya está registrado" };
 
-  // Generar código único
   const { data: codigo, error: errorCodigo } = await admin.rpc("generate_access_code");
   if (errorCodigo || !codigo) return { success: false, error: "Error al generar código" };
 
-  // Insertar en allowed_emails
   const { error } = await admin
     .from("allowed_emails")
     .insert({
@@ -82,6 +79,21 @@ export async function eliminarUsuario(email: string): Promise<ActionResult> {
   if (email === user.email) return { success: false, error: "No puedes eliminarte a ti mismo" };
 
   const admin = getAdminClient();
+
+  // 1. Buscar el usuario en auth.users
+  const { data: authUsers } = await admin.auth.admin.listUsers();
+  const authUser = authUsers?.users?.find((u) => u.email === email);
+
+  // 2. Eliminar de auth.users (esto también elimina profiles por FK CASCADE)
+  if (authUser) {
+    const { error: deleteAuthError } = await admin.auth.admin.deleteUser(authUser.id);
+    if (deleteAuthError) {
+      console.error("Error eliminando de auth:", deleteAuthError.message);
+      return { success: false, error: "Error al eliminar usuario" };
+    }
+  }
+
+  // 3. Eliminar de allowed_emails y profiles (por si acaso)
   await admin.from("allowed_emails").delete().eq("email", email);
   await admin.from("profiles").delete().eq("email", email);
 

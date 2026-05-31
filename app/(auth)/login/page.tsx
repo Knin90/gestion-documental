@@ -79,10 +79,18 @@ export default function LoginPage() {
         }}
       >
         {/* BLOQUE SUPERIOR */}
-        <div className="text-center px-14 pt-16 pb-10">
-          <ScrambleText text="¡Hola!" as="h1" className="font-serif text-4xl font-bold text-white mb-2" speed={80} delay={300} />
-          <ScrambleText text="Bienvenido de nuevo" as="h2" className="font-serif text-2xl font-semibold text-white mb-3" speed={60} delay={800} />
-          <ScrambleText text="Inicia sesión para continuar" as="p" className="text-sm" style={{ color: "rgba(203,239,235,0.65)" }} speed={40} delay={1400} />
+        <div className="px-14 pt-8 pb-6">
+          <div style={{ width: "100%", borderRadius: "16px", overflow: "hidden" }}>
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              style={{ width: "100%", height: "auto", display: "block" }}
+            >
+              <source src="/login.mp4" type="video/mp4" />
+            </video>
+          </div>
         </div>
 
         <div className="mx-14" style={{ height: "1px", backgroundColor: "rgba(203,239,235,0.12)" }} />

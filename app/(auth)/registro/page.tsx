@@ -18,7 +18,7 @@ export default function RegistroSeleccionPage() {
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.45)" }} />
 
       <div
-        className="relative z-10 w-full max-w-xl rounded-3xl flex flex-col"
+        className="auth-card relative z-10 w-full max-w-xl rounded-3xl flex flex-col"
         style={{
           backgroundColor: "rgba(10, 10, 10, 0.55)",
           backdropFilter: "blur(20px)",

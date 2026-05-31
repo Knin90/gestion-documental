@@ -63,7 +63,7 @@ export default function LoginPage() {
 
       <div
         id="login-card"
-        className="relative z-10 w-full max-w-xl rounded-3xl flex flex-col min-h-[700px]"
+        className="auth-card relative z-10 w-full max-w-xl rounded-3xl flex flex-col min-h-[700px]"
         style={{
           backgroundColor: "rgba(10, 10, 10, 0.55)",
           backdropFilter: "blur(20px)",

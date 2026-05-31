@@ -82,7 +82,6 @@ export default function LoginPage() {
         <div className="px-14 pt-8 pb-6">
           <div style={{ width: "100%", borderRadius: "16px", overflow: "hidden" }}>
             <video
-              src="/login.mp4"
               autoPlay
               loop
               muted
@@ -96,7 +95,10 @@ export default function LoginPage() {
                 }
               }}
               style={{ width: "100%", height: "auto", display: "block" }}
-            />
+            >
+              <source src="/login.webm" type="video/webm" />
+              <source src="/login.mp4" type="video/mp4" />
+            </video>
           </div>
         </div>
 

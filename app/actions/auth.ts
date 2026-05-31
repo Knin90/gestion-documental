@@ -1,5 +1,4 @@
 "use server";
-
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -16,27 +15,35 @@ export async function login(formData: FormData) {
   });
 
   if (!result.success) {
-  return { error: "Correo o contraseña incorrectos" };
+    return { error: "Correo o contraseña incorrectos" };
   }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(result.data);
 
   if (error) {
-    // Mensaje genérico por seguridad
     return { error: "Correo o contraseña incorrectos" };
   }
 
-  // Obtener factores MFA del usuario
-  const { data: factors } = await supabase.auth.mfa.listFactors();
-  const hasMfa = (factors?.totp?.length ?? 0) > 0;
+  // Verificar nivel de autenticación actual
+  const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  const currentLevel = aalData?.currentLevel;
+  const nextLevel = aalData?.nextLevel;
 
-  if (hasMfa) {
+  // Si ya está en aal2, no necesita verificar 2FA
+  if (currentLevel === "aal2") {
+    redirect("/dashboard");
+  }
+
+  // Si necesita subir a aal2 (tiene MFA configurado)
+  if (nextLevel === "aal2") {
+    const { data: factors } = await supabase.auth.mfa.listFactors();
     const factorId = factors?.totp?.[0]?.id;
     redirect(`/verificar-2fa?factorId=${factorId}`);
-  } else {
-    redirect("/configurar-2fa");
   }
+
+  // No tiene MFA configurado — mandarlo a configurar
+  redirect("/configurar-2fa");
 }
 
 export async function signOut() {
@@ -74,24 +81,17 @@ export async function registro(formData: FormData) {
 
   if (error) {
     if (error.message.includes("no está autorizado")) {
-      return {
-        error: "Este correo no tiene acceso. Pide a un usuario que te invite.",
-      };
+      return { error: "Este correo no tiene acceso. Pide a un usuario que te invite." };
     }
-    if (
-      error.message.includes("already registered") ||
-      error.message.includes("already been registered") ||
-      error.message.includes("User already registered")
-    ) {
-      return {
-        error: "Este correo ya tiene una cuenta. Inicia sesión directamente.",
-      };
+    if (error.message.includes("already registered") || error.message.includes("User already registered")) {
+      return { error: "Este correo ya tiene una cuenta. Inicia sesión directamente." };
     }
     return { error: "No se pudo crear la cuenta. Verifica los datos." };
   }
 
   return { success: true };
 }
+
 export async function verificarCodigoAcceso(codigo: string): Promise<{ valido: boolean; error?: string }> {
   const supabase = await createClient();
   const { data } = await supabase

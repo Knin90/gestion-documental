@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { login } from "@/app/actions/auth";
 import { ScrambleText } from "@/components/layout/scramble-text";
+import { SplashScreen } from "@/components/layout/splash-screen";
 
 
 function EyeIcon({ visible }: { visible: boolean }) {
@@ -34,6 +35,8 @@ function GoogleIcon() {
 }
 
 export default function LoginPage() {
+  const [showSplash, setShowSplash] = useState(true);
+  const handleSplashDone = useCallback(() => setShowSplash(false), []);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -51,6 +54,8 @@ export default function LoginPage() {
   }
 
   return (
+    <>
+      {showSplash && <SplashScreen onComplete={handleSplashDone} />}
     <div
       className="min-h-screen flex items-center justify-end px-40 py-8"
       style={{
@@ -158,5 +163,6 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

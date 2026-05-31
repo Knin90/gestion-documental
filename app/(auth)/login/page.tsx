@@ -82,15 +82,21 @@ export default function LoginPage() {
         <div className="px-14 pt-8 pb-6">
           <div style={{ width: "100%", borderRadius: "16px", overflow: "hidden" }}>
             <video
-              ref={(el) => { if (el) { el.muted = true; el.play().catch(() => {}); } }}
+              src="/login.mp4"
               autoPlay
               loop
               muted
               playsInline
+              preload="auto"
+              ref={(el) => {
+                if (el) {
+                  el.muted = true;
+                  el.load();
+                  el.play().catch(() => {});
+                }
+              }}
               style={{ width: "100%", height: "auto", display: "block" }}
-            >
-              <source src="/login.mp4" type="video/mp4" />
-            </video>
+            />
           </div>
         </div>
 

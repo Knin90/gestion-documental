@@ -80,7 +80,7 @@ export default function LoginPage() {
       >
         {/* BLOQUE SUPERIOR */}
         <div className="px-14 pt-8 pb-6">
-          <div style={{ width: "100%", borderRadius: "16px", overflow: "hidden" }}>
+          <div style={{ width: "70%", margin: "0 auto", borderRadius: "16px", overflow: "hidden" }}>
             <video
               autoPlay
               loop

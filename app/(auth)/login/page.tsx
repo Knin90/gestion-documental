@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { login } from "@/app/actions/auth";
-import { GlassBreakLink } from "@/components/layout/glass-break";
+
 
 function EyeIcon({ visible }: { visible: boolean }) {
   if (visible) {
@@ -152,14 +152,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
             ¿No tienes cuenta?{" "}
-            <GlassBreakLink
-              href="/registro"
-              cardSelector="#login-card"
-              className="font-semibold hover:underline"
-              style={{ color: "rgba(203,239,235,1)" }}
-            >
-              Crear cuenta
-            </GlassBreakLink>
+            <a href="/registro" className="font-semibold hover:underline" style={{ color: "rgba(203,239,235,1)" }}>Crear cuenta</a>
           </p>
         </div>
       </div>

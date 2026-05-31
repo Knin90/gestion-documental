@@ -31,21 +31,26 @@ export default function RegistroPage() {
 
     const supabase = createClient();
 
-    // Verificar código de acceso
-    const { data: perfil } = await supabase
-      .from("profiles")
-      .select("id, email")
+    // Verificar código en allowed_emails
+    const { data: permitido } = await supabase
+      .from("allowed_emails")
+      .select("email, access_code, is_active")
       .eq("access_code", accessCode)
       .maybeSingle();
 
-    if (!perfil) {
+    if (!permitido) {
       setError("Código de acceso inválido. Contacta al administrador.");
       setLoading(false);
       return;
     }
 
-    // Verificar que el correo coincide con el registrado
-    if (perfil.email !== email) {
+    if (!permitido.is_active) {
+      setError("Tu acceso ha sido desactivado. Contacta al administrador.");
+      setLoading(false);
+      return;
+    }
+
+    if (permitido.email !== email) {
       setError("El correo no coincide con el código de acceso.");
       setLoading(false);
       return;
@@ -88,9 +93,7 @@ export default function RegistroPage() {
           <p className="text-muted-foreground mb-4">
             Se ha enviado un correo de confirmación a tu bandeja de entrada.
           </p>
-          <p className="text-sm text-muted-foreground">
-            Redirigiendo al inicio de sesión...
-          </p>
+          <p className="text-sm text-muted-foreground">Redirigiendo al inicio de sesión...</p>
         </div>
       </div>
     );
@@ -99,22 +102,15 @@ export default function RegistroPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
-
         <div className="text-center mb-8">
           <div className="w-14 h-14 rounded-full bg-primary mx-auto mb-4 flex items-center justify-center">
             <span className="text-primary-foreground text-2xl">📝</span>
           </div>
-          <h1 className="font-serif text-2xl font-semibold text-foreground mb-1">
-            Crear cuenta
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Necesitas un código de acceso para registrarte
-          </p>
+          <h1 className="font-serif text-2xl font-semibold text-foreground mb-1">Crear cuenta</h1>
+          <p className="text-sm text-muted-foreground">Necesitas un código de acceso para registrarte</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-
-          {/* Código de acceso — primero */}
           <div className="space-y-2">
             <label htmlFor="access_code" className="text-sm font-medium text-foreground">
               Código de acceso <span className="text-red-500">*</span>
@@ -124,15 +120,13 @@ export default function RegistroPage() {
               name="access_code"
               type="text"
               required
-              placeholder="Ej: M5SD8A9P"
+              placeholder="Ej: Z8BKHWJ8"
               maxLength={8}
-              style={{ textTransform: "uppercase" }}
               className="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground font-mono tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-ring"
+              style={{ textTransform: "uppercase" }}
               disabled={loading}
             />
-            <p className="text-xs text-muted-foreground">
-              Solicita este código al administrador del sistema
-            </p>
+            <p className="text-xs text-muted-foreground">Solicita este código al administrador</p>
           </div>
 
           <div className="space-y-2">
@@ -165,7 +159,7 @@ export default function RegistroPage() {
               disabled={loading}
             />
             <p className="text-xs text-muted-foreground">
-              Debe coincidir con el correo asociado a tu código de acceso
+              Debe coincidir con el correo asociado a tu código
             </p>
           </div>
 
@@ -188,7 +182,7 @@ export default function RegistroPage() {
               <button
                 type="button"
                 onClick={() => setVerPassword(!verPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 {verPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -211,9 +205,7 @@ export default function RegistroPage() {
 
           <p className="text-center text-sm text-muted-foreground">
             ¿Ya tienes cuenta?{" "}
-            <a href="/login" className="text-primary hover:underline">
-              Inicia sesión
-            </a>
+            <a href="/login" className="text-primary hover:underline">Inicia sesión</a>
           </p>
         </form>
       </div>

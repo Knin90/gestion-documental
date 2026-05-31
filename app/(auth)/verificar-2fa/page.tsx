@@ -145,16 +145,23 @@ function Verificar2FAContent() {
         description="No se encontró el factor de autenticación."
         icon="⚠️"
       >
-        <a
-          href="/login"
+        <button
+          onClick={async () => {
+            const supabase = createClient();
+            await supabase.auth.signOut();
+            window.location.href = "/login";
+          }}
           style={{
             color: "#48A89A",
             textDecoration: "underline",
             fontSize: "0.875rem",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
           }}
         >
           Volver al login
-        </a>
+        </button>
       </TwoFALayout>
     );
   }
@@ -203,19 +210,27 @@ function Verificar2FAContent() {
           >
             El código cambia cada 30 segundos
           </p>
-          <a
-            href="/login"
+          <button
+            onClick={async () => {
+              const supabase = createClient();
+              await supabase.auth.signOut();
+              window.location.href = "/login";
+            }}
             style={{
               display: "block",
+              width: "100%",
               textAlign: "center",
               fontSize: "0.75rem",
               color: "var(--muted-foreground)",
               textDecoration: "underline",
               marginTop: "1rem",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
             }}
           >
             Volver al login
-          </a>
+          </button>
         </>
       )}
     </TwoFALayout>

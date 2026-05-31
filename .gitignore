@@ -43,3 +43,4 @@ next-env.d.ts
 # Variables de entorno locales
 .env.local
 .env*.local
+.unlighthouse/

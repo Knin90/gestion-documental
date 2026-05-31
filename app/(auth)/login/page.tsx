@@ -141,8 +141,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mx-14" style={{ height: "1px", backgroundColor: "rgba(203,239,235,0.12)" }} />
-
         {/* SOCIAL + REGISTRO */}
         <div className="px-14 pt-8 pb-12 flex flex-col gap-5">
           <div className="flex items-center gap-3">

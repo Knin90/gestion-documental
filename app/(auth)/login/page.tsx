@@ -82,6 +82,7 @@ export default function LoginPage() {
         <div className="px-14 pt-8 pb-6">
           <div style={{ width: "100%", borderRadius: "16px", overflow: "hidden" }}>
             <video
+              ref={(el) => { if (el) { el.muted = true; el.play().catch(() => {}); } }}
               autoPlay
               loop
               muted

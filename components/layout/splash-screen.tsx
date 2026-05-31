@@ -240,6 +240,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           animation: "splashIcon 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s both",
         }}>
           <video
+            ref={(el) => { if (el) { el.muted = true; el.play().catch(() => {}); } }}
             autoPlay
             loop
             muted

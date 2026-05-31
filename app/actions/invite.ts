@@ -21,19 +21,24 @@ async function verificarAdmin() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
+
   const { data: perfil } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, org_id")
     .eq("id", user.id)
     .single();
+
   if (perfil?.role !== "admin") return null;
-  return user;
+  if (!perfil?.org_id) return null;
+
+  return { user, orgId: perfil.org_id as string };
 }
 
 export async function invitarUsuario(nombre: string, correo: string): Promise<ActionResult> {
-  const user = await verificarAdmin();
-  if (!user) return { success: false, error: "No tienes permisos" };
+  const resultado = await verificarAdmin();
+  if (!resultado) return { success: false, error: "No tienes permisos" };
 
+  const { user, orgId } = resultado;
   const admin = getAdminClient();
   const emailLimpio = correo.trim().toLowerCase();
   const nombreLimpio = nombre.trim();
@@ -62,6 +67,7 @@ export async function invitarUsuario(nombre: string, correo: string): Promise<Ac
       access_code: codigo,
       invited_by: user.id,
       is_active: true,
+      org_id: orgId,            // ← vincula el código a la org del admin
     });
 
   if (error) {
@@ -74,17 +80,17 @@ export async function invitarUsuario(nombre: string, correo: string): Promise<Ac
 }
 
 export async function eliminarUsuario(email: string): Promise<ActionResult> {
-  const user = await verificarAdmin();
-  if (!user) return { success: false, error: "No tienes permisos" };
+  const resultado = await verificarAdmin();
+  if (!resultado) return { success: false, error: "No tienes permisos" };
+
+  const { user } = resultado;
   if (email === user.email) return { success: false, error: "No puedes eliminarte a ti mismo" };
 
   const admin = getAdminClient();
 
-  // 1. Buscar el usuario en auth.users
   const { data: authUsers } = await admin.auth.admin.listUsers();
   const authUser = authUsers?.users?.find((u) => u.email === email);
 
-  // 2. Eliminar de auth.users (esto también elimina profiles por FK CASCADE)
   if (authUser) {
     const { error: deleteAuthError } = await admin.auth.admin.deleteUser(authUser.id);
     if (deleteAuthError) {
@@ -93,7 +99,6 @@ export async function eliminarUsuario(email: string): Promise<ActionResult> {
     }
   }
 
-  // 3. Eliminar de allowed_emails y profiles (por si acaso)
   await admin.from("allowed_emails").delete().eq("email", email);
   await admin.from("profiles").delete().eq("email", email);
 

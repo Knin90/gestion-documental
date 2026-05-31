@@ -1,129 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { Eye, EyeOff } from "lucide-react";
 
-export default function RegistroPage() {
+export default function RegistroSeleccionPage() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [verPassword, setVerPassword] = useState(false);
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    const formData = new FormData(event.currentTarget);
-    const email = (formData.get("email") as string).trim().toLowerCase();
-    const password = formData.get("password") as string;
-    const fullName = (formData.get("full_name") as string).trim();
-    const accessCode = (formData.get("access_code") as string).trim().toUpperCase();
-
-    if (!accessCode) {
-      setError("El código de acceso es obligatorio");
-      setLoading(false);
-      return;
-    }
-
-    const supabase = createClient();
-
-    const { data: permitido } = await supabase
-      .from("allowed_emails")
-      .select("email, access_code, is_active")
-      .eq("access_code", accessCode)
-      .maybeSingle();
-
-    if (!permitido) {
-      setError("Código de acceso inválido. Contacta al administrador.");
-      setLoading(false);
-      return;
-    }
-
-    if (!permitido.is_active) {
-      setError("Tu acceso ha sido desactivado. Contacta al administrador.");
-      setLoading(false);
-      return;
-    }
-
-    if (permitido.email !== email) {
-      setError("El correo no coincide con el código de acceso.");
-      setLoading(false);
-      return;
-    }
-
-    const { error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName } },
-    });
-
-    if (signUpError) {
-      if (signUpError.message.includes("already registered")) {
-        setError("Este correo ya está registrado. Inicia sesión.");
-      } else {
-        setError(signUpError.message);
-      }
-      setLoading(false);
-      return;
-    }
-
-    setSuccess(true);
-    setLoading(false);
-    setTimeout(() => router.push("/login"), 3000);
-  }
-
-  const inputStyle = {
-    height: "48px",
-    padding: "0 16px",
-    borderRadius: "12px",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    border: "1px solid rgba(203,239,235,0.2)",
-    color: "#ffffff",
-    fontSize: "14px",
-    outline: "none",
-    width: "100%",
-  };
-
-  if (success) {
-    return (
-      <div
-        className="min-h-screen flex items-center justify-center px-8"
-        style={{
-          backgroundImage: "url('/login-bg.webp')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      >
-        <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.45)" }} />
-        <div
-          className="relative z-10 w-full max-w-xl rounded-3xl p-10 text-center"
-          style={{
-            backgroundColor: "rgba(5,57,49,0.75)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            border: "1px solid rgba(203,239,235,0.15)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-          }}
-        >
-          <div className="w-14 h-14 rounded-full bg-green-500 mx-auto mb-4 flex items-center justify-center">
-            <span className="text-white text-2xl">✓</span>
-          </div>
-          <h1 className="text-2xl font-bold text-white mb-2">¡Registro exitoso!</h1>
-          <p className="text-sm mb-2" style={{ color: "rgba(203,239,235,0.75)" }}>
-            Tu cuenta ha sido creada correctamente.
-          </p>
-          <p className="text-sm" style={{ color: "rgba(203,239,235,0.5)" }}>
-            Redirigiendo al inicio de sesión...
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div
@@ -147,140 +27,105 @@ export default function RegistroPage() {
           boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
         }}
       >
-        {/* Header */}
         <div className="text-center px-10 pt-10 pb-6">
           <div className="w-12 h-12 rounded-full bg-primary mx-auto mb-4 flex items-center justify-center">
-            <span className="text-2xl">📝</span>
+            <span className="text-2xl">📋</span>
           </div>
           <h1 className="text-3xl font-bold text-white mb-1">Crear cuenta</h1>
           <p className="text-sm" style={{ color: "rgba(203,239,235,0.65)" }}>
-            Necesitas un código de acceso para registrarte
+            ¿Cómo deseas registrarte?
           </p>
         </div>
 
-        <div className="mx-10" style={{ height: "1px", backgroundColor: "rgba(203,239,235,0.12)" }} />
+        <div
+          className="mx-10"
+          style={{ height: "1px", backgroundColor: "rgba(203,239,235,0.12)" }}
+        />
 
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} className="px-10 py-8 flex flex-col gap-4">
-
-          {/* Código de acceso */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium" style={{ color: "rgba(203,239,235,0.8)" }}>
-              Código de acceso <span className="text-red-400">*</span>
-            </label>
-            <input
-              name="access_code"
-              type="text"
-              required
-              maxLength={8}
-              placeholder="Ej: Z8BKHWJ8"
-              style={{ ...inputStyle, textTransform: "uppercase", letterSpacing: "0.15em", fontFamily: "monospace" }}
-              disabled={loading}
-            />
-            <p className="text-xs" style={{ color: "rgba(203,239,235,0.45)" }}>
-              Solicita este código al administrador
-            </p>
-          </div>
-
-          {/* Nombre */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium" style={{ color: "rgba(203,239,235,0.8)" }}>
-              Nombre completo <span className="text-red-400">*</span>
-            </label>
-            <input
-              name="full_name"
-              type="text"
-              required
-              placeholder="María González"
-              style={inputStyle}
-              disabled={loading}
-            />
-          </div>
-
-          {/* Correo */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium" style={{ color: "rgba(203,239,235,0.8)" }}>
-              Correo electrónico <span className="text-red-400">*</span>
-            </label>
-            <input
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              placeholder="correo@ejemplo.com"
-              style={inputStyle}
-              disabled={loading}
-            />
-            <p className="text-xs" style={{ color: "rgba(203,239,235,0.45)" }}>
-              Debe coincidir con el correo asociado a tu código
-            </p>
-          </div>
-
-          {/* Contraseña */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium" style={{ color: "rgba(203,239,235,0.8)" }}>
-              Contraseña <span className="text-red-400">*</span>
-            </label>
-            <div className="relative">
-              <input
-                name="password"
-                type={verPassword ? "text" : "password"}
-                autoComplete="new-password"
-                required
-                minLength={8}
-                placeholder="Mínimo 8 caracteres"
-                style={inputStyle}
-                disabled={loading}
-              />
-              <button
-                type="button"
-                onClick={() => setVerPassword(!verPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2"
-                style={{ color: "rgba(203,239,235,0.6)" }}
-              >
-                {verPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div
-              className="text-sm rounded-xl p-3"
-              style={{
-                backgroundColor: "rgba(220,38,38,0.15)",
-                border: "1px solid rgba(220,38,38,0.3)",
-                color: "#fca5a5",
-              }}
-            >
-              {error}
-            </div>
-          )}
-
-          {/* Botón */}
+        <div className="px-10 py-8 flex flex-col gap-4">
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full font-semibold transition-opacity disabled:opacity-50"
+            onClick={() => router.push("/registro/organizacion")}
+            className="w-full text-left"
             style={{
-              height: "52px",
-              borderRadius: "14px",
-              backgroundColor: "#053931",
-              color: "#CBEFEB",
-              fontSize: "15px",
-              border: "1px solid rgba(203,239,235,0.2)",
+              padding: "20px 24px",
+              borderRadius: "16px",
+              backgroundColor: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(203,239,235,0.18)",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(255,255,255,0.11)";
+              (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(203,239,235,0.35)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(255,255,255,0.06)";
+              (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(203,239,235,0.18)";
             }}
           >
-            {loading ? "Verificando..." : "Registrarse"}
+            <div className="flex items-start gap-4">
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: "rgba(203,239,235,0.12)" }}
+              >
+                <span className="text-xl">🏢</span>
+              </div>
+              <div>
+                <p className="font-semibold text-white text-base mb-1">
+                  Registrar una organización
+                </p>
+                <p className="text-sm" style={{ color: "rgba(203,239,235,0.55)" }}>
+                  Crea una cuenta para tu institución. Serás el administrador y podrás invitar a tu equipo.
+                </p>
+              </div>
+              <span className="flex-shrink-0 self-center ml-auto" style={{ color: "rgba(203,239,235,0.4)", fontSize: "20px" }}>→</span>
+            </div>
           </button>
 
-          <p className="text-center text-sm" style={{ color: "rgba(203,239,235,0.55)" }}>
+          <button
+            onClick={() => router.push("/registro/usuario")}
+            className="w-full text-left"
+            style={{
+              padding: "20px 24px",
+              borderRadius: "16px",
+              backgroundColor: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(203,239,235,0.18)",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(255,255,255,0.11)";
+              (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(203,239,235,0.35)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(255,255,255,0.06)";
+              (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(203,239,235,0.18)";
+            }}
+          >
+            <div className="flex items-start gap-4">
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: "rgba(203,239,235,0.12)" }}
+              >
+                <span className="text-xl">👤</span>
+              </div>
+              <div>
+                <p className="font-semibold text-white text-base mb-1">
+                  Unirme con código de acceso
+                </p>
+                <p className="text-sm" style={{ color: "rgba(203,239,235,0.55)" }}>
+                  Ya tengo un código que me dio el administrador de mi organización.
+                </p>
+              </div>
+              <span className="flex-shrink-0 self-center ml-auto" style={{ color: "rgba(203,239,235,0.4)", fontSize: "20px" }}>→</span>
+            </div>
+          </button>
+
+          <p className="text-center text-sm mt-2" style={{ color: "rgba(203,239,235,0.55)" }}>
             ¿Ya tienes cuenta?{" "}
             <a href="/login" style={{ color: "#CBEFEB" }} className="hover:underline font-medium">
               Inicia sesión
             </a>
           </p>
-        </form>
+        </div>
       </div>
     </div>
   );

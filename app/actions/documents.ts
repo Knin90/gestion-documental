@@ -21,6 +21,30 @@ function getAdminClient() {
 
 const TAMANO_MAXIMO_PDF = 15 * 1024 * 1024; // 15 MB
 
+// ─── Helper: obtiene user + org_id en una sola llamada ───────────────────────
+async function getUserAndOrg() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("org_id")
+    .eq("id", user.id)
+    .single();
+
+  // Sin org_id el usuario no puede operar documentos
+  if (!profile?.org_id) {
+    return { user, orgId: null as string | null };
+  }
+
+  return { user, orgId: profile.org_id as string };
+}
+
+// ─── PDF upload ──────────────────────────────────────────────────────────────
 async function subirPdf(archivo: File, documentId: string, userId: string) {
   if (archivo.size > TAMANO_MAXIMO_PDF) {
     return { error: "El PDF no puede superar 15 MB" };
@@ -49,10 +73,13 @@ async function subirPdf(archivo: File, documentId: string, userId: string) {
   };
 }
 
+// ─── Crear documento ─────────────────────────────────────────────────────────
 export async function crearDocumento(formData: FormData): Promise<ActionResult> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { user, orgId } = await getUserAndOrg();
+
+  if (!orgId) {
+    return { success: false, error: "Tu cuenta no está asociada a ninguna organización." };
+  }
 
   const resultado = documentoSchema.safeParse({
     type: formData.get("type"),
@@ -70,7 +97,11 @@ export async function crearDocumento(formData: FormData): Promise<ActionResult> 
   const admin = getAdminClient();
   const { data, error } = await admin
     .from("documents")
-    .insert({ ...resultado.data, created_by: user.id })
+    .insert({
+      ...resultado.data,
+      created_by: user.id,
+      org_id: orgId,           // ← vincula a la organización
+    })
     .select("id")
     .single();
 
@@ -79,7 +110,6 @@ export async function crearDocumento(formData: FormData): Promise<ActionResult> 
     return { success: false, error: "Error al guardar el documento" };
   }
 
-  // Subir PDF si se adjuntó
   const archivoPdf = formData.get("pdf") as File | null;
   if (archivoPdf && archivoPdf.size > 0) {
     const resPdf = await subirPdf(archivoPdf, data.id, user.id);
@@ -101,10 +131,16 @@ export async function crearDocumento(formData: FormData): Promise<ActionResult> 
   return { success: true, id: data.id };
 }
 
-export async function actualizarDocumento(id: string, formData: FormData): Promise<ActionResult> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+// ─── Actualizar documento ────────────────────────────────────────────────────
+export async function actualizarDocumento(
+  id: string,
+  formData: FormData
+): Promise<ActionResult> {
+  const { user, orgId } = await getUserAndOrg();
+
+  if (!orgId) {
+    return { success: false, error: "Tu cuenta no está asociada a ninguna organización." };
+  }
 
   const resultado = documentoSchema.safeParse({
     type: formData.get("type"),
@@ -121,7 +157,6 @@ export async function actualizarDocumento(id: string, formData: FormData): Promi
 
   const admin = getAdminClient();
 
-  // Subir PDF si se adjuntó
   const archivoPdf = formData.get("pdf") as File | null;
   let datosPdf = {};
 
@@ -141,6 +176,7 @@ export async function actualizarDocumento(id: string, formData: FormData): Promi
     .from("documents")
     .update({ ...resultado.data, ...datosPdf, updated_by: user.id })
     .eq("id", id)
+    .eq("org_id", orgId)       // ← solo puede editar docs de su org
     .is("deleted_at", null);
 
   if (error) {
@@ -154,16 +190,20 @@ export async function actualizarDocumento(id: string, formData: FormData): Promi
   return { success: true, id };
 }
 
+// ─── Eliminar documento (borrado lógico) ─────────────────────────────────────
 export async function eliminarDocumento(id: string): Promise<ActionResult> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { user, orgId } = await getUserAndOrg();
+
+  if (!orgId) {
+    return { success: false, error: "Tu cuenta no está asociada a ninguna organización." };
+  }
 
   const admin = getAdminClient();
   const { error } = await admin
     .from("documents")
     .update({ deleted_at: new Date().toISOString(), updated_by: user.id })
     .eq("id", id)
+    .eq("org_id", orgId)       // ← solo puede borrar docs de su org
     .is("deleted_at", null);
 
   if (error) {
@@ -176,16 +216,22 @@ export async function eliminarDocumento(id: string): Promise<ActionResult> {
   return { success: true };
 }
 
-export async function eliminarTodosDocumentos(tipo: "recibido" | "enviado"): Promise<ActionResult> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+// ─── Eliminar todos los documentos de un tipo ────────────────────────────────
+export async function eliminarTodosDocumentos(
+  tipo: "recibido" | "enviado"
+): Promise<ActionResult> {
+  const { user, orgId } = await getUserAndOrg();
+
+  if (!orgId) {
+    return { success: false, error: "Tu cuenta no está asociada a ninguna organización." };
+  }
 
   const admin = getAdminClient();
   const { error } = await admin
     .from("documents")
     .update({ deleted_at: new Date().toISOString(), updated_by: user.id })
     .eq("type", tipo)
+    .eq("org_id", orgId)       // ← CRÍTICO: solo borra los de su org
     .is("deleted_at", null);
 
   if (error) {

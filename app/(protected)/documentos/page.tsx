@@ -19,6 +19,16 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // Obtener org_id del perfil
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("org_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.org_id) redirect("/login");
+  const orgId = profile.org_id;
+
   const params = await searchParams;
   const tipo: TipoDocumento = params.tipo === "enviado" ? "enviado" : "recibido";
   const soloPendientes = params.solo_pendientes === "1";
@@ -30,6 +40,7 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
     .from("documents")
     .select("id, document_id, description, signed_by, addressed_to, document_date, pdf_url", { count: "exact" })
     .eq("type", tipo)
+    .eq("org_id", orgId)
     .is("deleted_at", null)
     .order("document_date", { ascending: false })
     .range(desde, desde + DOCUMENTOS_POR_PAGINA - 1);

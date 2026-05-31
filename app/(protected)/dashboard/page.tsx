@@ -81,10 +81,23 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // Obtener org_id del perfil
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("org_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.org_id) redirect("/login");
+  const orgId = profile.org_id;
+
   const params = await searchParams;
   const tipo: TipoDocumento = params.tipo === "enviado" ? "enviado" : "recibido";
 
-  const { data: stats, error } = await supabase.rpc("get_dashboard_stats", { tipo_doc: tipo });
+  const { data: stats, error } = await supabase.rpc("get_dashboard_stats", {
+    tipo_doc: tipo,
+    org_id_param: orgId,
+  });
 
   const datos = error || !stats
     ? { total: 0, totalEsteMes: 0, totalEsteAnio: 0, pendientesPdf: 0, topFirmantes: [], topDestinatarios: [], porMes: [], porAnio: [] }

@@ -36,6 +36,16 @@ export default async function BuscarPage({ searchParams }: PageProps) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // Obtener org_id del perfil
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("org_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.org_id) redirect("/login");
+  const orgId = profile.org_id;
+
   const params = await searchParams;
   const identificador = params.identificador?.trim() ?? "";
   const mes = params.mes ?? "";
@@ -52,6 +62,7 @@ export default async function BuscarPage({ searchParams }: PageProps) {
     let query = supabase
       .from("documents")
       .select("id, document_id, description, type, document_date, pdf_url, signed_by")
+      .eq("org_id", orgId)
       .is("deleted_at", null)
       .order("document_date", { ascending: orden === "asc" });
 

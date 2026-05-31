@@ -14,8 +14,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Gestión Documental",
-  description: "Sistema de gestión de documentos",
+  title: "Gestión Documental — Sistema de registro de notas",
+  description: "Sistema interno de gestión documental para registro, búsqueda y seguimiento de notas recibidas y enviadas. Acceso seguro con autenticación en dos pasos.",
+  openGraph: {
+    title: "Gestión Documental",
+    description: "Sistema interno de gestión documental para registro, búsqueda y seguimiento de notas recibidas y enviadas.",
+    url: "https://gestion.kunix.dev",
+    siteName: "Gestión Documental",
+    images: [
+      {
+        url: "https://gestion.kunix.dev/login-bg.webp",
+        width: 1200,
+        height: 630,
+        alt: "Gestión Documental",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Gestión Documental",
+    description: "Sistema interno de gestión documental.",
+    images: ["https://gestion.kunix.dev/login-bg.webp"],
+  },
 };
 
 export default function RootLayout({

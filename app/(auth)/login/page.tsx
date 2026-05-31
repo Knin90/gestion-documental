@@ -57,7 +57,7 @@ export default function LoginPage() {
     <>
       {showSplash && <SplashScreen onComplete={handleSplashDone} />}
     <div
-      className="min-h-screen flex items-center justify-end px-40 py-8"
+      className="min-h-screen flex items-center justify-center px-8 py-8"
       style={{
         backgroundImage: "url('/login-bg.webp')",
         backgroundSize: "cover",

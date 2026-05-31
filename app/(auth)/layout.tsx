@@ -103,22 +103,22 @@ export default function AuthLayout({
         }
 
         .auth-card {
-          animation: glitchIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards,
-                     chromaGlow 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          animation: glitchIn 2s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+                     chromaGlow 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         .auth-card h1, .auth-card h2 {
-          animation: rgbSplit 0.6s ease-out 0.1s both;
+          animation: rgbSplit 1.5s ease-out 0.3s both;
         }
 
         .auth-card form > div,
         .auth-card form > button {
-          animation: inputSlide 0.5s ease-out both;
+          animation: inputSlide 1s ease-out both;
         }
-        .auth-card form > div:nth-child(1) { animation-delay: 0.15s; }
-        .auth-card form > div:nth-child(2) { animation-delay: 0.25s; }
-        .auth-card form > div:nth-child(3) { animation-delay: 0.35s; }
-        .auth-card form > button { animation-delay: 0.45s; }
+        .auth-card form > div:nth-child(1) { animation-delay: 0.4s; }
+        .auth-card form > div:nth-child(2) { animation-delay: 0.7s; }
+        .auth-card form > div:nth-child(3) { animation-delay: 1.0s; }
+        .auth-card form > button { animation-delay: 1.3s; }
 
         .auth-scan-line {
           position: fixed;
@@ -135,7 +135,7 @@ export default function AuthLayout({
           );
           z-index: 100;
           pointer-events: none;
-          animation: scanLine 0.6s linear forwards;
+          animation: scanLine 1.8s linear forwards;
         }
 
         .auth-flash {
@@ -150,7 +150,7 @@ export default function AuthLayout({
             transparent 60%,
             rgba(0, 200, 255, 0.08) 100%
           );
-          animation: flashOverlay 0.4s ease-out forwards;
+          animation: flashOverlay 1.2s ease-out forwards;
         }
       `}</style>
       <div className="auth-scan-line" />

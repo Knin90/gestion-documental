@@ -29,8 +29,13 @@ export default function RegistroSeleccionPage() {
         }}
       >
         <div className="text-center px-10 pt-10 pb-6">
-          <div className="w-12 h-12 rounded-full bg-primary mx-auto mb-4 flex items-center justify-center">
-            <span className="text-2xl">📋</span>
+          <div style={{ width: "120px", margin: "0 auto 16px", borderRadius: "16px", overflow: "hidden" }}>
+            <video autoPlay loop muted playsInline preload="auto"
+              ref={(el) => { if (el) { el.muted = true; el.load(); el.play().catch(() => {}); } }}
+              style={{ width: "100%", height: "auto", display: "block" }}>
+              <source src="/registrar.webm" type="video/webm" />
+              <source src="/registrar.mp4" type="video/mp4" />
+            </video>
           </div>
           <ScrambleText text="Crear cuenta" as="h1" className="text-3xl font-bold text-white mb-1" speed={70} delay={300} />
           <ScrambleText text="¿Cómo deseas registrarte?" as="p" className="text-sm" style={{ color: "rgba(203,239,235,0.65)" }} speed={45} delay={900} />
@@ -62,12 +67,7 @@ export default function RegistroSeleccionPage() {
             }}
           >
             <div className="flex items-start gap-4">
-              <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: "rgba(203,239,235,0.12)" }}
-              >
-                <span className="text-xl">🏢</span>
-              </div>
+              
               <div>
                 <p className="font-semibold text-white text-base mb-1">
                   Registrar una organización
@@ -100,12 +100,7 @@ export default function RegistroSeleccionPage() {
             }}
           >
             <div className="flex items-start gap-4">
-              <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: "rgba(203,239,235,0.12)" }}
-              >
-                <span className="text-xl">👤</span>
-              </div>
+              
               <div>
                 <p className="font-semibold text-white text-base mb-1">
                   Unirme con código de acceso

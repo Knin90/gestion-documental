@@ -208,7 +208,6 @@ function Verificar2FAContent() {
               marginTop: "0.5rem",
             }}
           >
-            El código cambia cada 30 segundos
           </p>
           <button
             onClick={async () => {

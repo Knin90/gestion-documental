@@ -92,3 +92,16 @@ export async function registro(formData: FormData) {
 
   return { success: true };
 }
+export async function verificarCodigoAcceso(codigo: string): Promise<{ valido: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, email")
+    .eq("access_code", codigo.trim().toUpperCase())
+    .maybeSingle();
+
+  if (!data) {
+    return { valido: false, error: "Código de acceso inválido" };
+  }
+  return { valido: true };
+}

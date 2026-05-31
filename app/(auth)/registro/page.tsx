@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function RegistroPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [verPassword, setVerPassword] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -16,13 +18,41 @@ export default function RegistroPage() {
     setLoading(true);
 
     const formData = new FormData(event.currentTarget);
-    const email = formData.get("email") as string;
+    const email = (formData.get("email") as string).trim().toLowerCase();
     const password = formData.get("password") as string;
-    const fullName = formData.get("full_name") as string;
+    const fullName = (formData.get("full_name") as string).trim();
+    const accessCode = (formData.get("access_code") as string).trim().toUpperCase();
+
+    if (!accessCode) {
+      setError("El código de acceso es obligatorio");
+      setLoading(false);
+      return;
+    }
 
     const supabase = createClient();
-    
-    const { error } = await supabase.auth.signUp({
+
+    // Verificar código de acceso
+    const { data: perfil } = await supabase
+      .from("profiles")
+      .select("id, email")
+      .eq("access_code", accessCode)
+      .maybeSingle();
+
+    if (!perfil) {
+      setError("Código de acceso inválido. Contacta al administrador.");
+      setLoading(false);
+      return;
+    }
+
+    // Verificar que el correo coincide con el registrado
+    if (perfil.email !== email) {
+      setError("El correo no coincide con el código de acceso.");
+      setLoading(false);
+      return;
+    }
+
+    // Registrar usuario
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -30,9 +60,9 @@ export default function RegistroPage() {
       },
     });
 
-    if (error) {
-      if (error.message.includes("no está autorizado")) {
-        setError("Este correo no tiene acceso. Pide a un usuario que te invite.");
+    if (signUpError) {
+      if (signUpError.message.includes("already registered")) {
+        setError("Este correo ya está registrado. Inicia sesión.");
       } else {
         setError("No se pudo crear la cuenta. Verifica los datos.");
       }
@@ -42,11 +72,7 @@ export default function RegistroPage() {
 
     setSuccess(true);
     setLoading(false);
-    
-    // Redirigir después de 3 segundos
-    setTimeout(() => {
-      router.push("/login");
-    }, 3000);
+    setTimeout(() => router.push("/login"), 3000);
   }
 
   if (success) {
@@ -73,7 +99,7 @@ export default function RegistroPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
-        
+
         <div className="text-center mb-8">
           <div className="w-14 h-14 rounded-full bg-primary mx-auto mb-4 flex items-center justify-center">
             <span className="text-primary-foreground text-2xl">📝</span>
@@ -82,15 +108,36 @@ export default function RegistroPage() {
             Crear cuenta
           </h1>
           <p className="text-sm text-muted-foreground">
-            Regístrate para acceder al sistema
+            Necesitas un código de acceso para registrarte
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          
+        <form onSubmit={handleSubmit} className="space-y-4">
+
+          {/* Código de acceso — primero */}
+          <div className="space-y-2">
+            <label htmlFor="access_code" className="text-sm font-medium text-foreground">
+              Código de acceso <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="access_code"
+              name="access_code"
+              type="text"
+              required
+              placeholder="Ej: M5SD8A9P"
+              maxLength={8}
+              style={{ textTransform: "uppercase" }}
+              className="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground font-mono tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-ring"
+              disabled={loading}
+            />
+            <p className="text-xs text-muted-foreground">
+              Solicita este código al administrador del sistema
+            </p>
+          </div>
+
           <div className="space-y-2">
             <label htmlFor="full_name" className="text-sm font-medium text-foreground">
-              Nombre completo
+              Nombre completo <span className="text-red-500">*</span>
             </label>
             <input
               id="full_name"
@@ -105,7 +152,7 @@ export default function RegistroPage() {
 
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium text-foreground">
-              Correo electrónico
+              Correo electrónico <span className="text-red-500">*</span>
             </label>
             <input
               id="email"
@@ -118,28 +165,34 @@ export default function RegistroPage() {
               disabled={loading}
             />
             <p className="text-xs text-muted-foreground">
-              Solo correos autorizados pueden registrarse.
+              Debe coincidir con el correo asociado a tu código de acceso
             </p>
           </div>
 
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium text-foreground">
-              Contraseña
+              Contraseña <span className="text-red-500">*</span>
             </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={8}
-              placeholder="••••••••"
-              className="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              disabled={loading}
-            />
-            <p className="text-xs text-muted-foreground">
-              Mínimo 8 caracteres
-            </p>
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={verPassword ? "text" : "password"}
+                autoComplete="new-password"
+                required
+                minLength={8}
+                placeholder="Mínimo 8 caracteres"
+                className="w-full h-10 px-3 pr-10 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                disabled={loading}
+              />
+              <button
+                type="button"
+                onClick={() => setVerPassword(!verPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {verPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -153,7 +206,7 @@ export default function RegistroPage() {
             disabled={loading}
             className="w-full h-10 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
           >
-            {loading ? "Registrando..." : "Registrarse"}
+            {loading ? "Verificando..." : "Registrarse"}
           </button>
 
           <p className="text-center text-sm text-muted-foreground">

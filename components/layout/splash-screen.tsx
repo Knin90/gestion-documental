@@ -235,13 +235,19 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center",
       }}>
         <div style={{
-          width: "70px", height: "70px", margin: "0 auto 36px", borderRadius: "18px",
-          border: "1px solid rgba(203,239,235,0.25)", display: "flex", alignItems: "center",
-          justifyContent: "center", backgroundColor: "rgba(203,239,235,0.05)",
-          backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+          width: "120px", height: "120px", margin: "0 auto 36px", borderRadius: "22px",
+          overflow: "hidden", border: "1px solid rgba(203,239,235,0.2)",
           animation: "splashIcon 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s both",
         }}>
-          <span style={{ fontSize: "32px" }}>📋</span>
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          >
+            <source src="/presentacion.mp4" type="video/mp4" />
+          </video>
         </div>
 
         <ScrambleText text="Sistema de Gesti\u00f3n Documental" as="h1" speed={55} delay={600}

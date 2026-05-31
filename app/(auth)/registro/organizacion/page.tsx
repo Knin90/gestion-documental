@@ -169,13 +169,7 @@ export default function RegistroOrganizacionPage() {
       >
         <div className="relative text-center px-10 pt-10 pb-6">
           <div className="absolute left-0 top-0 pt-10 pl-10">
-            
-              href="/registro"
-              className="flex items-center gap-1 text-sm hover:underline"
-              style={{ color: "rgba(203,239,235,0.6)" }}
-            >
-              &larr; Volver
-            </a>
+            <a href="/registro" className="flex items-center gap-1 text-sm hover:underline" style={{ color: "rgba(203,239,235,0.6)" }}>&larr; Volver</a>
           </div>
           <div className="w-12 h-12 rounded-full bg-primary mx-auto mb-4 flex items-center justify-center">
             <span className="text-2xl">🏢</span>

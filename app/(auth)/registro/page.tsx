@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { ScrambleText } from "@/components/layout/scramble-text";
 
 export default function RegistroSeleccionPage() {
   const router = useRouter();
@@ -31,10 +32,8 @@ export default function RegistroSeleccionPage() {
           <div className="w-12 h-12 rounded-full bg-primary mx-auto mb-4 flex items-center justify-center">
             <span className="text-2xl">📋</span>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-1">Crear cuenta</h1>
-          <p className="text-sm" style={{ color: "rgba(203,239,235,0.65)" }}>
-            ¿Cómo deseas registrarte?
-          </p>
+          <ScrambleText text="Crear cuenta" as="h1" className="text-3xl font-bold text-white mb-1" speed={70} delay={300} />
+          <ScrambleText text="¿Cómo deseas registrarte?" as="p" className="text-sm" style={{ color: "rgba(203,239,235,0.65)" }} speed={45} delay={900} />
         </div>
 
         <div

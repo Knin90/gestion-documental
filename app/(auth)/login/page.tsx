@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { login } from "@/app/actions/auth";
+import { ScrambleText } from "@/components/layout/scramble-text";
 
 
 function EyeIcon({ visible }: { visible: boolean }) {
@@ -74,9 +75,9 @@ export default function LoginPage() {
       >
         {/* BLOQUE SUPERIOR */}
         <div className="text-center px-14 pt-16 pb-10">
-          <h1 className="font-serif text-4xl font-bold text-white mb-2">¡Hola!</h1>
-          <h2 className="font-serif text-2xl font-semibold text-white mb-3">Bienvenido de nuevo</h2>
-          <p className="text-sm" style={{ color: "rgba(203,239,235,0.65)" }}>Inicia sesión para continuar</p>
+          <ScrambleText text="¡Hola!" as="h1" className="font-serif text-4xl font-bold text-white mb-2" speed={80} delay={300} />
+          <ScrambleText text="Bienvenido de nuevo" as="h2" className="font-serif text-2xl font-semibold text-white mb-3" speed={60} delay={800} />
+          <ScrambleText text="Inicia sesión para continuar" as="p" className="text-sm" style={{ color: "rgba(203,239,235,0.65)" }} speed={40} delay={1400} />
         </div>
 
         <div className="mx-14" style={{ height: "1px", backgroundColor: "rgba(203,239,235,0.12)" }} />

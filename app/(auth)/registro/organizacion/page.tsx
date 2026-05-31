@@ -174,7 +174,7 @@ export default function RegistroOrganizacionPage() {
               className="flex items-center gap-1 text-sm hover:underline"
               style={{ color: "rgba(203,239,235,0.6)" }}
             >
-              ← Volver
+              &larr; Volver
             </a>
           </div>
           <div className="w-12 h-12 rounded-full bg-primary mx-auto mb-4 flex items-center justify-center">

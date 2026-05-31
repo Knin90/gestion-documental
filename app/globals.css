@@ -1,56 +1,56 @@
 @import "tailwindcss";
 
 /* ============================================
-   TEMA CLARO — inspirado en Coinest (verde claro)
+   TEMA CLARO
    ============================================ */
 :root {
-  --background: #f5faf5;
+  --background: #f0faf0;
   --foreground: #0d1f0d;
-  --muted-foreground: #6b7c6b;
-  --primary: #1a7a3c;
+  --muted-foreground: #5a7a5a;
+  --primary: #16a34a;
   --primary-foreground: #ffffff;
-  --input: #e2ede2;
-  --ring: #1a7a3c;
+  --input: #d4ecd4;
+  --ring: #16a34a;
 
   --sidebar: #ffffff;
   --sidebar-foreground: #0d1f0d;
-  --sidebar-border: #d4e8d4;
-  --sidebar-primary: #1a7a3c;
+  --sidebar-border: #c8e6c8;
+  --sidebar-primary: #16a34a;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e8f5e8;
+  --sidebar-accent: #dcf5dc;
   --sidebar-accent-foreground: #0d1f0d;
 
   --card: #ffffff;
   --card-foreground: #0d1f0d;
-  --border: #d4e8d4;
-  --muted: #e8f5e8;
+  --border: #c8e6c8;
+  --muted: #dcf5dc;
   --destructive: #dc2626;
 }
 
 /* ============================================
-   TEMA OSCURO — inspirado en DWISON (verde oscuro)
+   TEMA OSCURO
    ============================================ */
 :root.dark {
-  --background: #0f1a0f;
-  --foreground: #e8f5e8;
-  --muted-foreground: #7a9c7a;
+  --background: #0a1a0a;
+  --foreground: #d4f0d4;
+  --muted-foreground: #6a9a6a;
   --primary: #4ade80;
-  --primary-foreground: #0d1f0d;
-  --input: #1a2e1a;
+  --primary-foreground: #0a1a0a;
+  --input: #162416;
   --ring: #4ade80;
 
-  --sidebar: #111f11;
-  --sidebar-foreground: #e8f5e8;
-  --sidebar-border: #1e3a1e;
+  --sidebar: #0d200d;
+  --sidebar-foreground: #d4f0d4;
+  --sidebar-border: #1a3a1a;
   --sidebar-primary: #4ade80;
-  --sidebar-primary-foreground: #0d1f0d;
-  --sidebar-accent: #1a2e1a;
-  --sidebar-accent-foreground: #e8f5e8;
+  --sidebar-primary-foreground: #0a1a0a;
+  --sidebar-accent: #162416;
+  --sidebar-accent-foreground: #d4f0d4;
 
-  --card: #141f14;
-  --card-foreground: #e8f5e8;
-  --border: #1e3a1e;
-  --muted: #1a2e1a;
+  --card: #0d200d;
+  --card-foreground: #d4f0d4;
+  --border: #1a3a1a;
+  --muted: #162416;
   --destructive: #f87171;
 }
 
@@ -61,9 +61,6 @@ body {
   transition: background-color 0.2s, color 0.2s;
 }
 
-/* ============================================
-   UTILIDADES
-   ============================================ */
 .bg-background { background-color: var(--background); }
 .text-foreground { color: var(--foreground); }
 .text-muted-foreground { color: var(--muted-foreground); }

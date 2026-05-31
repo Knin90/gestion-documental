@@ -34,8 +34,8 @@ function generateShards(cols: number, rows: number): Shard[] {
         tx: (Math.random() - 0.5) * 300,
         ty: 200 + Math.random() * 400,
         rotate: (Math.random() - 0.5) * 720,
-        delay: Math.random() * 0.15,
-        duration: 0.6 + Math.random() * 0.4,
+        delay: Math.random() * 0.4,
+        duration: 1.5 + Math.random() * 0.8,
       });
 
       // Triángulo 2
@@ -45,8 +45,8 @@ function generateShards(cols: number, rows: number): Shard[] {
         tx: (Math.random() - 0.5) * 300,
         ty: 200 + Math.random() * 400,
         rotate: (Math.random() - 0.5) * 720,
-        delay: Math.random() * 0.15,
-        duration: 0.6 + Math.random() * 0.4,
+        delay: Math.random() * 0.4,
+        duration: 1.5 + Math.random() * 0.8,
       });
 
       // Triángulo 3
@@ -56,8 +56,8 @@ function generateShards(cols: number, rows: number): Shard[] {
         tx: (Math.random() - 0.5) * 300,
         ty: 200 + Math.random() * 400,
         rotate: (Math.random() - 0.5) * 720,
-        delay: Math.random() * 0.15,
-        duration: 0.6 + Math.random() * 0.4,
+        delay: Math.random() * 0.4,
+        duration: 1.5 + Math.random() * 0.8,
       });
 
       // Triángulo 4
@@ -67,8 +67,8 @@ function generateShards(cols: number, rows: number): Shard[] {
         tx: (Math.random() - 0.5) * 300,
         ty: 200 + Math.random() * 400,
         rotate: (Math.random() - 0.5) * 720,
-        delay: Math.random() * 0.15,
-        duration: 0.6 + Math.random() * 0.4,
+        delay: Math.random() * 0.4,
+        duration: 1.5 + Math.random() * 0.8,
       });
     }
   }
@@ -131,7 +131,7 @@ export function GlassBreakLink({
         background: rgba(203, 239, 235, 0.15);
         z-index: 9998;
         pointer-events: none;
-        animation: glassFlash 0.3s ease-out forwards;
+        animation: glassFlash 0.6s ease-out forwards;
       `;
       document.body.appendChild(flash);
 
@@ -186,7 +186,7 @@ export function GlassBreakLink({
         container.remove();
         flash.remove();
         router.push(href);
-      }, 850);
+      }, 2500);
     },
     [href, cardSelector, router]
   );

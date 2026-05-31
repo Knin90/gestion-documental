@@ -1,69 +1,73 @@
 @import "tailwindcss";
 
+/* ============================================
+   TEMA CLARO — inspirado en Coinest (verde claro)
+   ============================================ */
 :root {
-  --background: #ffffff;
-  --foreground: #0a0f0e;
-  --muted-foreground: #6b7280;
-  --primary: #053931;
-  --primary-foreground: #CBEFEB;
-  --aurora-dark: #053931;
-  --aurora-medium: #00524D;
-  --aurora-light: #48A89A;
-  --aurora-mint: #CBEFEB;
+  --background: #f5faf5;
+  --foreground: #0d1f0d;
+  --muted-foreground: #6b7c6b;
+  --primary: #1a7a3c;
+  --primary-foreground: #ffffff;
+  --input: #e2ede2;
+  --ring: #1a7a3c;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0d1f0d;
+  --sidebar-border: #d4e8d4;
+  --sidebar-primary: #1a7a3c;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8f5e8;
+  --sidebar-accent-foreground: #0d1f0d;
+
+  --card: #ffffff;
+  --card-foreground: #0d1f0d;
+  --border: #d4e8d4;
+  --muted: #e8f5e8;
+  --destructive: #dc2626;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #051a17;
-    --foreground: #CBEFEB;
-    --muted-foreground: #9ca3a0;
-  }
+/* ============================================
+   TEMA OSCURO — inspirado en DWISON (verde oscuro)
+   ============================================ */
+:root.dark {
+  --background: #0f1a0f;
+  --foreground: #e8f5e8;
+  --muted-foreground: #7a9c7a;
+  --primary: #4ade80;
+  --primary-foreground: #0d1f0d;
+  --input: #1a2e1a;
+  --ring: #4ade80;
+
+  --sidebar: #111f11;
+  --sidebar-foreground: #e8f5e8;
+  --sidebar-border: #1e3a1e;
+  --sidebar-primary: #4ade80;
+  --sidebar-primary-foreground: #0d1f0d;
+  --sidebar-accent: #1a2e1a;
+  --sidebar-accent-foreground: #e8f5e8;
+
+  --card: #141f14;
+  --card-foreground: #e8f5e8;
+  --border: #1e3a1e;
+  --muted: #1a2e1a;
+  --destructive: #f87171;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: system-ui, -apple-system, sans-serif;
+  transition: background-color 0.2s, color 0.2s;
 }
 
+/* ============================================
+   UTILIDADES
+   ============================================ */
 .bg-background { background-color: var(--background); }
 .text-foreground { color: var(--foreground); }
 .text-muted-foreground { color: var(--muted-foreground); }
-.border { border: 1px solid #e5e7eb; }
-
-/* --- Sidebar --- */
-:root {
-  --sidebar: #f3faf9;
-  --sidebar-foreground: #1a3330;
-  --sidebar-border: #d1e8e5;
-  --sidebar-primary: #053931;
-  --sidebar-primary-foreground: #CBEFEB;
-  --sidebar-accent: #e0f4f1;
-  --sidebar-accent-foreground: #053931;
-  --card: #ffffff;
-  --card-foreground: #0a0f0e;
-  --border: #e5e7eb;
-  --muted: #f3f4f6;
-  --destructive: #dc2626;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --sidebar: #051a17;
-    --sidebar-foreground: #CBEFEB;
-    --sidebar-border: #0d3330;
-    --sidebar-primary: #48A89A;
-    --sidebar-primary-foreground: #051a17;
-    --sidebar-accent: #0a2e2b;
-    --sidebar-accent-foreground: #CBEFEB;
-    --card: #072420;
-    --card-foreground: #CBEFEB;
-    --border: #0d3330;
-    --muted: #0a2e2b;
-    --destructive: #f87171;
-  }
-}
-
+.border { border: 1px solid var(--border); }
 .bg-sidebar { background-color: var(--sidebar); }
 .text-sidebar-foreground { color: var(--sidebar-foreground); }
 .border-sidebar-border { border-color: var(--sidebar-border); }
@@ -75,4 +79,11 @@ body {
 .text-card-foreground { color: var(--card-foreground); }
 .bg-muted { background-color: var(--muted); }
 .text-destructive { color: var(--destructive); }
+.border-destructive\/20 { border-color: color-mix(in srgb, var(--destructive) 20%, transparent); }
 .bg-destructive\/10 { background-color: color-mix(in srgb, var(--destructive) 10%, transparent); }
+.focus\:ring-sidebar-primary:focus { outline: 2px solid var(--sidebar-primary); outline-offset: 2px; }
+.focus\:ring-2:focus { outline-width: 2px; }
+.focus\:ring-ring:focus { outline-color: var(--ring); }
+.border-input { border-color: var(--input); }
+.bg-input { background-color: var(--input); }
+.accent-sidebar-primary { accent-color: var(--sidebar-primary); }

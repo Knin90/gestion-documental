@@ -43,7 +43,6 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Encabezado */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Documentos</h1>
@@ -63,7 +62,6 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
         </div>
       </div>
 
-      {/* Filtros */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <form method="GET" className="flex-1">
           <input type="hidden" name="tipo" value={tipo} />
@@ -88,46 +86,46 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
         <EliminarTodosBoton tipo={tipo} total={count ?? 0} />
       </div>
 
-      {/* Tabla desktop */}
       {!documentos || documentos.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-16 gap-3">
           <FileWarning className="h-8 w-8 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">No hay documentos para mostrar</p>
-          <Link
-            href="/documentos/nuevo"
-            className="text-sm font-medium text-sidebar-primary hover:underline"
-          >
+          <Link href="/documentos/nuevo" className="text-sm font-medium text-sidebar-primary hover:underline">
             Crear el primero
           </Link>
         </div>
       ) : (
         <>
           {/* Desktop */}
-          <div className="hidden md:block rounded-xl border bg-card overflow-hidden">
+          <div className="hidden md:block rounded-xl border overflow-hidden" style={{borderColor: 'var(--border)'}}>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">ID</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Descripción</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Procedencia</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Fecha</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">PDF</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Acciones</th>
+                <tr style={{backgroundColor: 'var(--table-header)'}}>
+                  <th className="px-4 py-3 text-left font-semibold" style={{color: 'var(--table-header-foreground)'}}>ID</th>
+                  <th className="px-4 py-3 text-left font-semibold" style={{color: 'var(--table-header-foreground)'}}>Descripción</th>
+                  <th className="px-4 py-3 text-left font-semibold" style={{color: 'var(--table-header-foreground)'}}>Procedencia</th>
+                  <th className="px-4 py-3 text-left font-semibold" style={{color: 'var(--table-header-foreground)'}}>Fecha</th>
+                  <th className="px-4 py-3 text-left font-semibold" style={{color: 'var(--table-header-foreground)'}}>PDF</th>
+                  <th className="px-4 py-3 text-left font-semibold" style={{color: 'var(--table-header-foreground)'}}>Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
-                {documentos.map((doc) => (
-                  <tr key={doc.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
+              <tbody>
+                {documentos.map((doc, index) => (
+                  <tr
+                    key={doc.id}
+                    style={{backgroundColor: index % 2 === 0 ? 'var(--table-row-a)' : 'var(--table-row-b)'}}
+                    className="transition-colors hover:opacity-80"
+                  >
+                    <td className="px-4 py-3 font-mono text-xs" style={{color: 'var(--muted-foreground)'}}>
                       {doc.document_id ?? "—"}
                     </td>
-                    <td className="px-4 py-3 max-w-xs">
+                    <td className="px-4 py-3 max-w-xs" style={{color: 'var(--card-foreground)'}}>
                       <span className="line-clamp-2">{doc.description}</span>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">
+                    <td className="px-4 py-3" style={{color: 'var(--muted-foreground)'}}>
                       {doc.signed_by ?? "—"}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap" style={{color: 'var(--muted-foreground)'}}>
                       {doc.document_date
                         ? new Date(doc.document_date + "T00:00:00").toLocaleDateString("es", {
                             day: "2-digit",
@@ -149,16 +147,10 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <Link
-                          href={`/documentos/${doc.id}`}
-                          className="rounded px-2 py-1 text-xs font-medium hover:bg-muted transition-colors"
-                        >
+                        <Link href={`/documentos/${doc.id}`} className="rounded px-2 py-1 text-xs font-medium hover:bg-muted transition-colors" style={{color: 'var(--sidebar-primary)'}}>
                           Ver
                         </Link>
-                        <Link
-                          href={`/documentos/${doc.id}/editar`}
-                          className="rounded px-2 py-1 text-xs font-medium hover:bg-muted transition-colors"
-                        >
+                        <Link href={`/documentos/${doc.id}/editar`} className="rounded px-2 py-1 text-xs font-medium hover:bg-muted transition-colors" style={{color: 'var(--foreground)'}}>
                           Editar
                         </Link>
                         <EliminarDocumentoBoton id={doc.id} />
@@ -170,50 +162,36 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
             </table>
           </div>
 
-          {/* Mobile — tarjetas */}
+          {/* Mobile */}
           <div className="grid gap-3 md:hidden">
-            {documentos.map((doc) => (
-              <div key={doc.id} className="rounded-xl border bg-card p-4 space-y-2">
+            {documentos.map((doc, index) => (
+              <div
+                key={doc.id}
+                className="rounded-xl border p-4 space-y-2"
+                style={{backgroundColor: index % 2 === 0 ? 'var(--table-row-a)' : 'var(--table-row-b)', borderColor: 'var(--border)'}}
+              >
                 <div className="flex items-start justify-between gap-2">
-                  <span className="text-sm font-medium line-clamp-2">{doc.description}</span>
+                  <span className="text-sm font-medium line-clamp-2" style={{color: 'var(--card-foreground)'}}>{doc.description}</span>
                   {doc.pdf_url ? (
-                    <span className="shrink-0 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                      PDF
-                    </span>
+                    <span className="shrink-0 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">PDF</span>
                   ) : (
-                    <span className="shrink-0 inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
-                      Pendiente
-                    </span>
+                    <span className="shrink-0 inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">Pendiente</span>
                   )}
                 </div>
                 {doc.document_id && (
-                  <p className="text-xs text-muted-foreground font-mono">ID: {doc.document_id}</p>
+                  <p className="text-xs font-mono" style={{color: 'var(--muted-foreground)'}}>ID: {doc.document_id}</p>
                 )}
                 {doc.signed_by && (
-                  <p className="text-xs text-muted-foreground">Firmante: {doc.signed_by}</p>
+                  <p className="text-xs" style={{color: 'var(--muted-foreground)'}}>Firmante: {doc.signed_by}</p>
                 )}
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs" style={{color: 'var(--muted-foreground)'}}>
                   {doc.document_date
-                    ? new Date(doc.document_date + "T00:00:00").toLocaleDateString("es", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })
+                    ? new Date(doc.document_date + "T00:00:00").toLocaleDateString("es", { day: "2-digit", month: "short", year: "numeric" })
                     : "—"}
                 </p>
                 <div className="flex items-center gap-2 pt-1">
-                  <Link
-                    href={`/documentos/${doc.id}`}
-                    className="rounded px-3 py-1 text-xs font-medium border hover:bg-muted transition-colors"
-                  >
-                    Ver
-                  </Link>
-                  <Link
-                    href={`/documentos/${doc.id}/editar`}
-                    className="rounded px-3 py-1 text-xs font-medium border hover:bg-muted transition-colors"
-                  >
-                    Editar
-                  </Link>
+                  <Link href={`/documentos/${doc.id}`} className="rounded px-3 py-1 text-xs font-medium border hover:bg-muted transition-colors" style={{color: 'var(--sidebar-primary)'}}>Ver</Link>
+                  <Link href={`/documentos/${doc.id}/editar`} className="rounded px-3 py-1 text-xs font-medium border hover:bg-muted transition-colors">Editar</Link>
                   <EliminarDocumentoBoton id={doc.id} />
                 </div>
               </div>
@@ -223,23 +201,15 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
           {/* Paginación */}
           {totalPaginas > 1 && (
             <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Página {pagina} de {totalPaginas}
-              </p>
+              <p className="text-sm text-muted-foreground">Página {pagina} de {totalPaginas}</p>
               <div className="flex gap-2">
                 {pagina > 1 && (
-                  <Link
-                    href={`/documentos?tipo=${tipo}&pagina=${pagina - 1}${soloPendientes ? "&solo_pendientes=1" : ""}${busqueda ? `&q=${busqueda}` : ""}`}
-                    className="rounded-lg border px-3 py-1.5 text-sm hover:bg-muted transition-colors"
-                  >
+                  <Link href={`/documentos?tipo=${tipo}&pagina=${pagina - 1}${soloPendientes ? "&solo_pendientes=1" : ""}${busqueda ? `&q=${busqueda}` : ""}`} className="rounded-lg border px-3 py-1.5 text-sm hover:bg-muted transition-colors">
                     Anterior
                   </Link>
                 )}
                 {pagina < totalPaginas && (
-                  <Link
-                    href={`/documentos?tipo=${tipo}&pagina=${pagina + 1}${soloPendientes ? "&solo_pendientes=1" : ""}${busqueda ? `&q=${busqueda}` : ""}`}
-                    className="rounded-lg border px-3 py-1.5 text-sm hover:bg-muted transition-colors"
-                  >
+                  <Link href={`/documentos?tipo=${tipo}&pagina=${pagina + 1}${soloPendientes ? "&solo_pendientes=1" : ""}${busqueda ? `&q=${busqueda}` : ""}`} className="rounded-lg border px-3 py-1.5 text-sm hover:bg-muted transition-colors">
                     Siguiente
                   </Link>
                 )}

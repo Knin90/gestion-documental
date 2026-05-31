@@ -84,3 +84,21 @@ body {
 .border-input { border-color: var(--input); }
 .bg-input { background-color: var(--input); }
 .accent-sidebar-primary { accent-color: var(--sidebar-primary); }
+
+/* Filas alternas de tabla */
+:root {
+  --table-header: #d8f0d0;
+  --table-header-foreground: #1a3a0a;
+  --table-row-a: #ffffff;
+  --table-row-b: #eef8e8;
+}
+:root.dark {
+  --table-header: #2a3a1a;
+  --table-header-foreground: #89E900;
+  --table-row-a: #222222;
+  --table-row-b: #2a2a1a;
+}
+.bg-table-header { background-color: var(--table-header); }
+.text-table-header { color: var(--table-header-foreground); }
+.bg-table-row-a { background-color: var(--table-row-a); }
+.bg-table-row-b { background-color: var(--table-row-b); }

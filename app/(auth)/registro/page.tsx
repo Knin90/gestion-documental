@@ -101,7 +101,7 @@ export default function RegistroPage() {
       >
         <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.45)" }} />
         <div
-          className="relative z-10 w-full max-w-md rounded-3xl p-10 text-center"
+          className="relative z-10 w-full max-w-xl rounded-3xl p-10 text-center"
           style={{
             backgroundColor: "rgba(5,57,49,0.75)",
             backdropFilter: "blur(20px)",
@@ -138,7 +138,7 @@ export default function RegistroPage() {
       <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.45)" }} />
 
       <div
-        className="relative z-10 w-full max-w-md rounded-3xl flex flex-col"
+        className="relative z-10 w-full max-w-xl rounded-3xl flex flex-col"
         style={{
           backgroundColor: "rgba(5,57,49,0.70)",
           backdropFilter: "blur(20px)",

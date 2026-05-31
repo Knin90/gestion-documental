@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { SidebarItem } from "@/components/layout/sidebar-item";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 const ITEMS_NAVEGACION = [
@@ -77,6 +78,7 @@ function SidebarContenido({ onNavigate }: SidebarContenidoProps) {
 
       <div className="border-t border-sidebar-border px-3 py-4 space-y-1">
         <SidebarItem href="/perfil" label="Mi perfil" icon={User} onNavigate={onNavigate} />
+<NotificationBell />
         <button
           onClick={handleCerrarSesion}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"

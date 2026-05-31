@@ -205,7 +205,7 @@ export default function LoginPage() {
                 aria-label={
                   showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
                 }
-                className="absolute right-4 top-1/2 -translate-y-1/2 focus:outline-none"
+                className="absolute right-4 top-1/2 -translate-y-1/2 focus:outline-none p-2"
                 style={{ color: "rgba(203,239,235,0.6)" }}
               >
                 <EyeIcon visible={showPassword} />

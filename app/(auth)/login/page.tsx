@@ -275,12 +275,12 @@ export default function LoginPage() {
           </div>
 
           {/* Google y Apple */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 sm:gap-4">
             <button
               type="button"
               className="flex items-center justify-center gap-2 font-medium transition-all hover:opacity-80"
               style={{
-                height: "48px",
+                height: "52px", minHeight: "52px",
                 borderRadius: "12px",
                 backgroundColor: "rgba(255,255,255,0.10)",
                 border: "1px solid rgba(255,255,255,0.2)",
@@ -306,7 +306,7 @@ export default function LoginPage() {
               type="button"
               className="flex items-center justify-center gap-2 font-medium transition-all hover:opacity-80"
               style={{
-                height: "48px",
+                height: "52px", minHeight: "52px",
                 borderRadius: "12px",
                 backgroundColor: "rgba(255,255,255,0.10)",
                 border: "1px solid rgba(255,255,255,0.2)",

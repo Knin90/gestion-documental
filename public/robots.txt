@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /login
+Allow: /registro
+Allow: /recuperar-contrasena
+Disallow: /dashboard
+Disallow: /documentos
+Disallow: /perfil
+Disallow: /buscar
+Disallow: /importar
+Disallow: /exportar
+Disallow: /api/
+
+Sitemap: https://gestion.kunix.dev/sitemap.xml

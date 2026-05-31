@@ -192,7 +192,7 @@ export function GlassBreakLink({
   );
 
   return (
-    
+    <a
       href={href}
       onClick={handleClick}
       className={className}

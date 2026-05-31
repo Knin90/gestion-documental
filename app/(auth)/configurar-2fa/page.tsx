@@ -226,7 +226,7 @@ export default function Configurar2FAPage() {
 
           <div className="text-center">
             <button
-              onClick={() => router.push("/login")}
+              onClick={async () => { const supabase = (await import("@/lib/supabase/client")).createClient(); await supabase.auth.signOut(); router.push("/login"); }}
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               Cancelar y volver al login

@@ -4,53 +4,53 @@
    TEMA CLARO
    ============================================ */
 :root {
-  --background: #f0faf0;
-  --foreground: #0d1f0d;
-  --muted-foreground: #5a7a5a;
-  --primary: #16a34a;
+  --background: #f5f9f0;
+  --foreground: #1a2a0a;
+  --muted-foreground: #5a7a3a;
+  --primary: #4a8a00;
   --primary-foreground: #ffffff;
-  --input: #d4ecd4;
-  --ring: #16a34a;
+  --input: #d8ecc0;
+  --ring: #89E900;
 
   --sidebar: #ffffff;
-  --sidebar-foreground: #0d1f0d;
-  --sidebar-border: #c8e6c8;
-  --sidebar-primary: #16a34a;
+  --sidebar-foreground: #1a2a0a;
+  --sidebar-border: #cce8a0;
+  --sidebar-primary: #4a8a00;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #dcf5dc;
-  --sidebar-accent-foreground: #0d1f0d;
+  --sidebar-accent: #e8f5cc;
+  --sidebar-accent-foreground: #1a2a0a;
 
   --card: #ffffff;
-  --card-foreground: #0d1f0d;
-  --border: #c8e6c8;
-  --muted: #dcf5dc;
+  --card-foreground: #1a2a0a;
+  --border: #cce8a0;
+  --muted: #e8f5cc;
   --destructive: #dc2626;
 }
 
 /* ============================================
-   TEMA OSCURO
+   TEMA OSCURO — Night #222222 + Kiwi #89E900
    ============================================ */
 :root.dark {
-  --background: #0a1a0a;
-  --foreground: #d4f0d4;
-  --muted-foreground: #6a9a6a;
-  --primary: #4ade80;
-  --primary-foreground: #0a1a0a;
-  --input: #162416;
-  --ring: #4ade80;
+  --background: #222222;
+  --foreground: #89E900;
+  --muted-foreground: #6aaa00;
+  --primary: #89E900;
+  --primary-foreground: #222222;
+  --input: #2e2e2e;
+  --ring: #89E900;
 
-  --sidebar: #0d200d;
-  --sidebar-foreground: #d4f0d4;
-  --sidebar-border: #1a3a1a;
-  --sidebar-primary: #4ade80;
-  --sidebar-primary-foreground: #0a1a0a;
-  --sidebar-accent: #162416;
-  --sidebar-accent-foreground: #d4f0d4;
+  --sidebar: #1a1a1a;
+  --sidebar-foreground: #89E900;
+  --sidebar-border: #333333;
+  --sidebar-primary: #89E900;
+  --sidebar-primary-foreground: #222222;
+  --sidebar-accent: #2a2a2a;
+  --sidebar-accent-foreground: #89E900;
 
-  --card: #0d200d;
-  --card-foreground: #d4f0d4;
-  --border: #1a3a1a;
-  --muted: #162416;
+  --card: #2a2a2a;
+  --card-foreground: #e8ffe0;
+  --border: #333333;
+  --muted: #2e2e2e;
   --destructive: #f87171;
 }
 

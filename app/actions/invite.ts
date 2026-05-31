@@ -17,24 +17,22 @@ function getAdminClient() {
   );
 }
 
-export async function invitarUsuario(
-  nombre: string,
-  correo: string
-): Promise<ActionResult> {
+async function verificarAdmin() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "No autenticado" };
-
-  // Verificar que es admin
+  if (!user) return null;
   const { data: perfil } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
+  if (perfil?.role !== "admin") return null;
+  return user;
+}
 
-  if (perfil?.role !== "admin") {
-    return { success: false, error: "No tienes permisos" };
-  }
+export async function invitarUsuario(nombre: string, correo: string): Promise<ActionResult> {
+  const user = await verificarAdmin();
+  if (!user) return { success: false, error: "No tienes permisos" };
 
   const admin = getAdminClient();
   const emailLimpio = correo.trim().toLowerCase();
@@ -44,52 +42,34 @@ export async function invitarUsuario(
     return { success: false, error: "Nombre y correo son obligatorios" };
   }
 
-  // Verificar que no existe ya
+  // Verificar que no existe
   const { data: existe } = await admin
     .from("allowed_emails")
     .select("id")
     .eq("email", emailLimpio)
     .maybeSingle();
 
-  if (existe) {
-    return { success: false, error: "Este correo ya está registrado" };
-  }
+  if (existe) return { success: false, error: "Este correo ya está registrado" };
 
   // Generar código único
   const { data: codigo, error: errorCodigo } = await admin.rpc("generate_access_code");
-  if (errorCodigo || !codigo) {
-    return { success: false, error: "Error al generar código" };
-  }
+  if (errorCodigo || !codigo) return { success: false, error: "Error al generar código" };
 
   // Insertar en allowed_emails
-  const { error: errorEmail } = await admin
+  const { error } = await admin
     .from("allowed_emails")
     .insert({
       email: emailLimpio,
-      invited_by: user.id,
+      full_name: nombreLimpio,
       notes: nombreLimpio,
+      access_code: codigo,
+      invited_by: user.id,
       is_active: true,
     });
 
-  if (errorEmail) {
-    console.error("Error al insertar en allowed_emails:", errorEmail.message);
-    return { success: false, error: "Error al agregar correo autorizado" };
-  }
-
-  // Insertar en profiles (pre-crear perfil)
-  const { error: errorPerfil } = await admin
-    .from("profiles")
-    .insert({
-      id: crypto.randomUUID(),
-      email: emailLimpio,
-      full_name: nombreLimpio,
-      access_code: codigo,
-      role: "user",
-    });
-
-  if (errorPerfil) {
-    console.error("Error al crear perfil:", errorPerfil.message);
-    // No fallar — el perfil se creará al registrarse
+  if (error) {
+    console.error("Error:", error.message);
+    return { success: false, error: "Error al agregar usuario" };
   }
 
   revalidatePath("/perfil");
@@ -97,27 +77,11 @@ export async function invitarUsuario(
 }
 
 export async function eliminarUsuario(email: string): Promise<ActionResult> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "No autenticado" };
-
-  const { data: perfil } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (perfil?.role !== "admin") {
-    return { success: false, error: "No tienes permisos" };
-  }
-
-  // No permitir eliminarse a sí mismo
-  if (email === user.email) {
-    return { success: false, error: "No puedes eliminarte a ti mismo" };
-  }
+  const user = await verificarAdmin();
+  if (!user) return { success: false, error: "No tienes permisos" };
+  if (email === user.email) return { success: false, error: "No puedes eliminarte a ti mismo" };
 
   const admin = getAdminClient();
-
   await admin.from("allowed_emails").delete().eq("email", email);
   await admin.from("profiles").delete().eq("email", email);
 

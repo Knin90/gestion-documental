@@ -7,39 +7,35 @@ import { createClient } from "@/lib/supabase/client";
 import { User, Mail, Shield, KeyRound, Eye, EyeOff, Copy, Users, UserPlus, Trash2 } from "lucide-react";
 import { invitarUsuario, eliminarUsuario } from "@/app/actions/invite";
 
-interface Perfil {
-  id: string;
-  full_name: string;
+interface UsuarioTabla {
   email: string;
-  role: string;
+  full_name: string;
   access_code: string | null;
+  is_active: boolean;
   created_at: string;
+  registrado: boolean;
 }
 
 export default function PerfilPage() {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("");
-  const [accessCode, setAccessCode] = useState("");
-  const [usuarios, setUsuarios] = useState<Perfil[]>([]);
+  const [usuarios, setUsuarios] = useState<UsuarioTabla[]>([]);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
 
-  // Invitar
   const [nuevoNombre, setNuevoNombre] = useState("");
   const [nuevoCorreo, setNuevoCorreo] = useState("");
   const [invitando, setInvitando] = useState(false);
   const [codigoGenerado, setCodigoGenerado] = useState("");
   const [verCodigoGenerado, setVerCodigoGenerado] = useState(false);
+  const [codigosVisibles, setCodigosVisibles] = useState<Record<string, boolean>>({});
 
-  // Contraseña
   const [passwordNueva, setPasswordNueva] = useState("");
   const [passwordConfirmar, setPasswordConfirmar] = useState("");
   const [verPassword, setVerPassword] = useState(false);
   const [verConfirmar, setVerConfirmar] = useState(false);
   const [cambiandoPassword, setCambiandoPassword] = useState(false);
-
-  // Eliminar usuario
   const [eliminando, setEliminando] = useState<string | null>(null);
 
   const supabase = createClient();
@@ -60,15 +56,32 @@ export default function PerfilPage() {
       setNombre(perfil.full_name ?? "");
       setEmail(perfil.email ?? user.email ?? "");
       setRole(perfil.role ?? "user");
-      setAccessCode(perfil.access_code ?? "");
     }
 
     if (perfil?.role === "admin") {
-      const { data: todos } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, role, access_code, created_at")
+      // Leer de allowed_emails para ver todos
+      const { data: permitidos } = await supabase
+        .from("allowed_emails")
+        .select("email, full_name, access_code, is_active, created_at")
         .order("created_at", { ascending: true });
-      setUsuarios(todos ?? []);
+
+      // Ver cuáles ya se registraron (están en profiles)
+      const { data: registrados } = await supabase
+        .from("profiles")
+        .select("email");
+
+      const emailsRegistrados = new Set(registrados?.map((p) => p.email) ?? []);
+
+      setUsuarios(
+        (permitidos ?? []).map((u) => ({
+          email: u.email,
+          full_name: u.full_name || "—",
+          access_code: u.access_code,
+          is_active: u.is_active,
+          created_at: u.created_at,
+          registrado: emailsRegistrados.has(u.email),
+        }))
+      );
     }
 
     setCargando(false);
@@ -97,17 +110,15 @@ export default function PerfilPage() {
     }
     setInvitando(true);
     setCodigoGenerado("");
-
     const res = await invitarUsuario(nuevoNombre.trim(), nuevoCorreo.trim());
-
     if (res.success && res.access_code) {
       setCodigoGenerado(res.access_code);
-      toast.success("Usuario agregado correctamente");
+      toast.success("Usuario agregado");
       setNuevoNombre("");
       setNuevoCorreo("");
       await cargarDatos();
     } else {
-      toast.error(res.error ?? "Error al invitar");
+      toast.error(res.error ?? "Error al agregar");
     }
     setInvitando(false);
   }
@@ -119,7 +130,7 @@ export default function PerfilPage() {
       toast.success("Usuario eliminado");
       await cargarDatos();
     } else {
-      toast.error(res.error ?? "Error al eliminar");
+      toast.error(res.error ?? "Error");
     }
     setEliminando(null);
   }
@@ -127,6 +138,10 @@ export default function PerfilPage() {
   function copiarCodigo(codigo: string) {
     navigator.clipboard.writeText(codigo);
     toast.success("Código copiado");
+  }
+
+  function toggleVerCodigo(email: string) {
+    setCodigosVisibles((prev) => ({ ...prev, [email]: !prev[email] }));
   }
 
   async function handleCambiarPassword(e: React.FormEvent) {
@@ -174,7 +189,9 @@ export default function PerfilPage() {
           <input id="nombre" type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary" />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" /> Correo</label>
+          <label className="text-sm font-medium flex items-center gap-1.5">
+            <Mail className="h-3.5 w-3.5" /> Correo
+          </label>
           <input type="email" value={email} disabled className="w-full rounded-lg border bg-muted px-3 py-2 text-sm text-muted-foreground cursor-not-allowed" />
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -192,18 +209,15 @@ export default function PerfilPage() {
             <UserPlus className="h-4 w-4" />
             Agregar usuario
           </h2>
-          <p className="text-xs text-muted-foreground">
-            Agrega un nuevo usuario autorizado. Se generará un código de acceso único.
-          </p>
           <form onSubmit={handleInvitar} className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <label htmlFor="nuevo-nombre" className="text-xs font-medium">Nombre completo</label>
-                <input id="nuevo-nombre" type="text" value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} placeholder="Nombre y apellido" className="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary" />
+                <label className="text-xs font-medium">Nombre completo</label>
+                <input type="text" value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} placeholder="Nombre y apellido" className="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary" />
               </div>
               <div className="space-y-1">
-                <label htmlFor="nuevo-correo" className="text-xs font-medium">Correo electrónico</label>
-                <input id="nuevo-correo" type="email" value={nuevoCorreo} onChange={(e) => setNuevoCorreo(e.target.value)} placeholder="correo@ejemplo.com" className="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary" />
+                <label className="text-xs font-medium">Correo electrónico</label>
+                <input type="email" value={nuevoCorreo} onChange={(e) => setNuevoCorreo(e.target.value)} placeholder="correo@ejemplo.com" className="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary" />
               </div>
             </div>
             <button type="submit" disabled={invitando} className="flex items-center gap-2 rounded-lg bg-sidebar-primary px-5 py-2 text-sm font-medium text-sidebar-primary-foreground hover:opacity-90 disabled:opacity-50">
@@ -214,9 +228,9 @@ export default function PerfilPage() {
 
           {codigoGenerado && (
             <div className="rounded-lg border border-green-200 bg-green-50 p-4 space-y-2">
-              <p className="text-sm font-medium text-green-800">Usuario agregado correctamente</p>
+              <p className="text-sm font-medium text-green-800">Usuario agregado</p>
               <div className="flex items-center gap-3">
-                <span className="text-xs text-green-700">Código de acceso:</span>
+                <span className="text-xs text-green-700">Código:</span>
                 <span className="font-mono text-sm font-bold tracking-widest text-green-900">
                   {verCodigoGenerado ? codigoGenerado : "••••••••"}
                 </span>
@@ -227,7 +241,7 @@ export default function PerfilPage() {
                   <Copy className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <p className="text-xs text-green-600">Comparte este código con el usuario. Lo necesitará para ingresar al sistema.</p>
+              <p className="text-xs text-green-600">Comparte este código con el usuario para que pueda registrarse.</p>
             </div>
           )}
         </div>
@@ -238,7 +252,7 @@ export default function PerfilPage() {
         <div className="rounded-xl border bg-card p-6 space-y-4">
           <h2 className="text-sm font-semibold flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Usuarios registrados ({usuarios.length})
+            Usuarios ({usuarios.length})
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -246,32 +260,48 @@ export default function PerfilPage() {
                 <tr className="border-b">
                   <th className="px-3 py-2 text-left font-medium text-muted-foreground">Nombre</th>
                   <th className="px-3 py-2 text-left font-medium text-muted-foreground">Correo</th>
-                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">Rol</th>
-                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">Registro</th>
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">Código</th>
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">Estado</th>
                   <th className="px-3 py-2 text-left font-medium text-muted-foreground">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {usuarios.map((u) => (
-                  <tr key={u.id}>
-                    <td className="px-3 py-2">{u.full_name || "—"}</td>
+                  <tr key={u.email}>
+                    <td className="px-3 py-2 font-medium">{u.full_name}</td>
                     <td className="px-3 py-2 text-muted-foreground text-xs">{u.email}</td>
                     <td className="px-3 py-2">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                        u.role === "admin" ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800"
-                      }`}>
-                        {u.role === "admin" ? "Admin" : "Usuario"}
-                      </span>
+                      {u.access_code && u.email !== email ? (
+                        <div className="flex items-center gap-1">
+                          <span className="font-mono text-xs">
+                            {codigosVisibles[u.email] ? u.access_code : "••••••••"}
+                          </span>
+                          <button onClick={() => toggleVerCodigo(u.email)} className="text-muted-foreground hover:text-foreground">
+                            {codigosVisibles[u.email] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                          </button>
+                          <button onClick={() => copiarCodigo(u.access_code!)} className="text-muted-foreground hover:text-foreground">
+                            <Copy className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </td>
-                    <td className="px-3 py-2 text-muted-foreground text-xs">
-                      {new Date(u.created_at).toLocaleDateString("es")}
+                    <td className="px-3 py-2">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                        u.registrado
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}>
+                        {u.registrado ? "Registrado" : "Pendiente"}
+                      </span>
                     </td>
                     <td className="px-3 py-2">
                       {u.email !== email && (
                         <button
                           onClick={() => handleEliminar(u.email)}
                           disabled={eliminando === u.email}
-                          className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                          className="rounded p-1 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
                         >
                           {eliminando === u.email ? "..." : <Trash2 className="h-3.5 w-3.5" />}
                         </button>
@@ -292,18 +322,18 @@ export default function PerfilPage() {
           Cambiar contraseña
         </h2>
         <div className="space-y-2">
-          <label htmlFor="password-nueva" className="text-sm font-medium">Nueva contraseña</label>
+          <label className="text-sm font-medium">Nueva contraseña</label>
           <div className="relative">
-            <input id="password-nueva" type={verPassword ? "text" : "password"} value={passwordNueva} onChange={(e) => setPasswordNueva(e.target.value)} placeholder="Mínimo 6 caracteres" className="w-full rounded-lg border bg-background px-3 py-2 pr-10 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary" />
+            <input type={verPassword ? "text" : "password"} value={passwordNueva} onChange={(e) => setPasswordNueva(e.target.value)} placeholder="Mínimo 6 caracteres" className="w-full rounded-lg border bg-background px-3 py-2 pr-10 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary" />
             <button type="button" onClick={() => setVerPassword(!verPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
               {verPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
         </div>
         <div className="space-y-2">
-          <label htmlFor="password-confirmar" className="text-sm font-medium">Confirmar contraseña</label>
+          <label className="text-sm font-medium">Confirmar contraseña</label>
           <div className="relative">
-            <input id="password-confirmar" type={verConfirmar ? "text" : "password"} value={passwordConfirmar} onChange={(e) => setPasswordConfirmar(e.target.value)} placeholder="Repite la contraseña" className="w-full rounded-lg border bg-background px-3 py-2 pr-10 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary" />
+            <input type={verConfirmar ? "text" : "password"} value={passwordConfirmar} onChange={(e) => setPasswordConfirmar(e.target.value)} placeholder="Repite la contraseña" className="w-full rounded-lg border bg-background px-3 py-2 pr-10 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-primary" />
             <button type="button" onClick={() => setVerConfirmar(!verConfirmar)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
               {verConfirmar ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>

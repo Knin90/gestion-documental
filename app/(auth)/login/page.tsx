@@ -65,7 +65,7 @@ export default function LoginPage() {
         id="login-card"
         className="relative z-10 w-full max-w-xl rounded-3xl flex flex-col min-h-[700px]"
         style={{
-          backgroundColor: "rgba(5, 57, 49, 0.80)",
+          backgroundColor: "rgba(10, 10, 10, 0.55)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           border: "1px solid rgba(203, 239, 235, 0.15)",

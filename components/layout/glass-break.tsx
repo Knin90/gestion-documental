@@ -142,7 +142,7 @@ export function GlassBreakLink({
           position: absolute;
           inset: 0;
           clip-path: ${shard.clipPath};
-          background-color: rgba(5, 57, 49, 0.80);
+          background-color: rgba(10, 10, 10, 0.55);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
           border: 1px solid rgba(203, 239, 235, 0.12);

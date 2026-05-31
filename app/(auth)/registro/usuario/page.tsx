@@ -124,7 +124,7 @@ export default function RegistroUsuarioPage() {
         <div
           className="relative z-10 w-full max-w-xl rounded-3xl p-10 text-center"
           style={{
-            backgroundColor: "rgba(5,57,49,0.75)",
+            backgroundColor: "rgba(10, 10, 10, 0.55)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(203,239,235,0.15)",
@@ -160,7 +160,7 @@ export default function RegistroUsuarioPage() {
       <div
         className="relative z-10 w-full max-w-xl rounded-3xl flex flex-col"
         style={{
-          backgroundColor: "rgba(5,57,49,0.70)",
+          backgroundColor: "rgba(10, 10, 10, 0.55)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           border: "1px solid rgba(203,239,235,0.15)",

@@ -99,8 +99,8 @@ export function LoadingBackground() {
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    const fadeTimer = setTimeout(() => setFading(true), 700);
-    const hideTimer = setTimeout(() => setVisible(false), 1000);
+    const fadeTimer = setTimeout(() => setFading(true), 1700);
+    const hideTimer = setTimeout(() => setVisible(false), 2000);
     return () => { clearTimeout(fadeTimer); clearTimeout(hideTimer); };
   }, []);
 

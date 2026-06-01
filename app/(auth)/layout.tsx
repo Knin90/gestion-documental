@@ -1,3 +1,5 @@
+import { LoadingBackground } from "@/components/layout/loading-background";
+
 export default function AuthLayout({
   children,
 }: {
@@ -5,12 +7,7 @@ export default function AuthLayout({
 }) {
   return (
     <>
-      <link
-        rel="preload"
-        href="/login-bg.webp"
-        as="image"
-        type="image/webp"
-      />
+      <LoadingBackground />
       <style>{`
         @keyframes glitchIn {
           0% {
@@ -153,8 +150,6 @@ export default function AuthLayout({
           animation: flashOverlay 1.2s ease-out forwards;
         }
       `}</style>
-      <div className="auth-scan-line" />
-      <div className="auth-flash" />
       {children}
     </>
   );

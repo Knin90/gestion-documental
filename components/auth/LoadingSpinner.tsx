@@ -2,12 +2,15 @@
 
 export function LoadingSpinner({ message = "Cargando..." }: { message?: string }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
+    <div
+      className="min-h-screen flex flex-col items-center justify-center gap-4"
+      style={{ background: "radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%)" }}
+    >
       <div className="relative w-12 h-12">
-        <div className="absolute inset-0 rounded-full border-4 border-muted" />
-        <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+        <div className="absolute inset-0 rounded-full border-4" style={{ borderColor: "rgba(203,239,235,0.15)" }} />
+        <div className="absolute inset-0 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: "rgba(0,255,255,0.6)", borderTopColor: "transparent" }} />
       </div>
-      <p className="text-muted-foreground animate-pulse">{message}</p>
+      <p className="animate-pulse" style={{ color: "rgba(203,239,235,0.6)" }}>{message}</p>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function LoadingBackground() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -95,6 +95,17 @@ export function LoadingBackground() {
     };
   }, []);
 
+  const [visible, setVisible] = useState(true);
+  const [fading, setFading] = useState(false);
+
+  useEffect(() => {
+    const fadeTimer = setTimeout(() => setFading(true), 700);
+    const hideTimer = setTimeout(() => setVisible(false), 1000);
+    return () => { clearTimeout(fadeTimer); clearTimeout(hideTimer); };
+  }, []);
+
+  if (!visible) return null;
+
   return (
     <div
       ref={containerRef}
@@ -103,6 +114,8 @@ export function LoadingBackground() {
         inset: 0,
         zIndex: -1,
         backgroundColor: "#000",
+        transition: "opacity 0.3s ease-out",
+        opacity: fading ? 0 : 1,
       }}
     />
   );

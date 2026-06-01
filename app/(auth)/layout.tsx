@@ -100,8 +100,7 @@ export default function AuthLayout({
         }
 
         .auth-card {
-          animation: glitchIn 2s cubic-bezier(0.16, 1, 0.3, 1) forwards,
-                     chromaGlow 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          /* animaciones removidas para evitar re-render flicker */
         }
 
         .auth-card h1, .auth-card h2 {

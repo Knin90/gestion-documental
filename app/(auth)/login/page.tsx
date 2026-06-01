@@ -69,15 +69,6 @@ export default function LoginPage() {
       <div
         id="login-card"
         className="relative z-10 w-full max-w-2xl rounded-3xl flex flex-col min-h-[700px]"
-        ref={(el) => {
-          if (el && !el.dataset.animated) {
-            el.dataset.animated = "1";
-            el.classList.add("auth-card");
-            el.addEventListener("animationend", () => {
-              el.classList.remove("auth-card");
-            }, { once: true });
-          }
-        }}
         style={{
           backgroundColor: "rgba(10, 10, 10, 0.55)",
           backdropFilter: "blur(20px)",

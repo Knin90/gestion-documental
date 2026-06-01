@@ -3,6 +3,7 @@ import { useState, useCallback } from "react";
 import { login } from "@/app/actions/auth";
 import { ScrambleText } from "@/components/layout/scramble-text";
 import { SplashScreen } from "@/components/layout/splash-screen";
+import { OceanBackground } from "@/components/layout/ocean-background";
 
 
 function EyeIcon({ visible }: { visible: boolean }) {
@@ -58,14 +59,9 @@ export default function LoginPage() {
       {showSplash && <SplashScreen onComplete={handleSplashDone} />}
     <div
       className="min-h-screen flex items-center justify-center px-8 py-8"
-      style={{
-        backgroundImage: "url('/login-bg.webp')",
-        backgroundSize: "cover",
-        backgroundPosition: "center left",
-        backgroundRepeat: "no-repeat",
-      }}
+      style={{ position: "relative" }}
     >
-      <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.35)" }} />
+      <OceanBackground />
 
       <div
         id="login-card"

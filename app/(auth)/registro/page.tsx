@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ScrambleText } from "@/components/layout/scramble-text";
+import { OceanBackground } from "@/components/layout/ocean-background";
 
 export default function RegistroSeleccionPage() {
   const router = useRouter();
@@ -9,14 +10,9 @@ export default function RegistroSeleccionPage() {
   return (
     <div
       className="min-h-screen flex items-center justify-center px-8 py-8"
-      style={{
-        backgroundImage: "url('/login-bg.webp')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
+      style={{ position: "relative" }}
     >
-      <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.45)" }} />
+      <OceanBackground />
 
       <div
         className="auth-card relative z-10 w-full max-w-xl rounded-3xl flex flex-col"

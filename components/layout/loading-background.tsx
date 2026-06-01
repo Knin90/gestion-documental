@@ -51,10 +51,11 @@ export function LoadingBackground() {
       scene.add(pointCloud);
 
       let step = 0;
+      const startTime = Date.now();
       let animId = 0;
 
       function animate() {
-        if (!mounted) return;
+        if (!mounted || Date.now() - startTime > 1000) return;
         animId = requestAnimationFrame(animate);
         step += 0.01;
         pointCloud.rotation.x = step;

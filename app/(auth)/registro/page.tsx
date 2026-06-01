@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { ScrambleText } from "@/components/layout/scramble-text";
-import { OceanBackground } from "@/components/layout/ocean-background";
+import dynamic from "next/dynamic";
+const OceanBackground = dynamic(() => import("@/components/layout/ocean-background").then(m => ({ default: m.OceanBackground })), { ssr: false });
 
 export default function RegistroSeleccionPage() {
   const router = useRouter();

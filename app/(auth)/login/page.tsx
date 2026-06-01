@@ -3,7 +3,8 @@ import { useState, useCallback } from "react";
 import { login } from "@/app/actions/auth";
 import { ScrambleText } from "@/components/layout/scramble-text";
 import { SplashScreen } from "@/components/layout/splash-screen";
-import { OceanBackground } from "@/components/layout/ocean-background";
+import dynamic from "next/dynamic";
+const OceanBackground = dynamic(() => import("@/components/layout/ocean-background").then(m => ({ default: m.OceanBackground })), { ssr: false });
 
 
 function EyeIcon({ visible }: { visible: boolean }) {

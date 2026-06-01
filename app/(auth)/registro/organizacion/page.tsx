@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Eye, EyeOff } from "lucide-react";
-import { OceanBackground } from "@/components/layout/ocean-background";
+import dynamic from "next/dynamic";
+const OceanBackground = dynamic(() => import("@/components/layout/ocean-background").then(m => ({ default: m.OceanBackground })), { ssr: false });
 
 export default function RegistroOrganizacionPage() {
   const router = useRouter();

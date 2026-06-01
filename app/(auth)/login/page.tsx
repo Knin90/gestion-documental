@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { login } from "@/app/actions/auth";
 import { ScrambleText } from "@/components/layout/scramble-text";
 import { SplashScreen } from "@/components/layout/splash-screen";
@@ -41,17 +41,9 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [animDone, setAnimDone] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setAnimDone(true), 2500);
-    return () => clearTimeout(timer);
-  }, []);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setAnimDone(true), 2500);
-    return () => clearTimeout(timer);
-  }, []);
+
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -76,7 +68,16 @@ export default function LoginPage() {
 
       <div
         id="login-card"
-        className={`${animDone ? "" : "auth-card"} relative z-10 w-full max-w-2xl rounded-3xl flex flex-col min-h-[700px]`
+        className="relative z-10 w-full max-w-2xl rounded-3xl flex flex-col min-h-[700px]"
+        ref={(el) => {
+          if (el && !el.dataset.animated) {
+            el.dataset.animated = "1";
+            el.classList.add("auth-card");
+            el.addEventListener("animationend", () => {
+              el.classList.remove("auth-card");
+            }, { once: true });
+          }
+        }}
         style={{
           backgroundColor: "rgba(10, 10, 10, 0.55)",
           backdropFilter: "blur(20px)",

@@ -14,7 +14,7 @@ interface SidebarItemProps {
 
 export function SidebarItem({ href, label, icon: Icon, onNavigate }: SidebarItemProps) {
   const pathname = usePathname();
-  const estaActivo = pathname === href || pathname.startsWith(`${href}/`);
+  const estaActivo = pathname === href;
 
   return (
     <Link

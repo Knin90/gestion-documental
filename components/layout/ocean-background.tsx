@@ -106,19 +106,18 @@ export function OceanBackground() {
       // SeaBed
       const seaG = new THREE.PlaneGeometry(100, 100, 400, 400).rotateX(-Math.PI * 0.5).rotateY(Math.PI * 0.25);
       ToQuads(seaG as any);
-      const seaM = new THREE.MeshBasicMaterial({
-        color: "#048",
-        onBeforeCompile: (shader: any) => {
-          shader.uniforms.time = gu.time;
-          shader.vertexShader = `
+      const seaM = new THREE.MeshBasicMaterial({ color: "#048" });
+      seaM.onBeforeCompile = (shader: any) => {
+        shader.uniforms.time = gu.time;
+        shader.vertexShader = `
             uniform float time;
             varying float vN;
             varying vec3 vPos;
             ${NOISE_GLSL}
             ${shader.vertexShader}
           `.replace(
-            `#include <begin_vertex>`,
-            `#include <begin_vertex>
+          `#include <begin_vertex>`,
+          `#include <begin_vertex>
             float t = time;
             float posX = position.x - mod(t, 2. * sqrt(2.));
             transformed.x = posX;
@@ -127,19 +126,18 @@ export function OceanBackground() {
             vN = n;
             transformed.y = n * 1.;
             vPos = transformed;`
-          );
-          shader.fragmentShader = `
+        );
+        shader.fragmentShader = `
             varying float vN;
             varying vec3 vPos;
             ${shader.fragmentShader}
           `.replace(
-            `vec4 diffuseColor = vec4( diffuse, opacity );`,
-            `vec3 col = mix(diffuse, vec3(0, 0.75, 1), 1. - smoothstep(-0.5, 0., vN));
+          `vec4 diffuseColor = vec4( diffuse, opacity );`,
+          `vec3 col = mix(diffuse, vec3(0, 0.75, 1), 1. - smoothstep(-0.5, 0., vN));
             col += vec3(0, 0.2, 0.1) * (1. - smoothstep(10., 15., length(vPos)));
             vec4 diffuseColor = vec4( col, opacity );`
-          );
-        },
-      });
+        );
+      };
       const seaBed = new THREE.LineSegments(seaG, seaM);
       seaBed.position.y = -5;
       scene.add(seaBed);

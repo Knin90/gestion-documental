@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import type * as THREE from "three";
 
 const NOISE_GLSL = `
 vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }

@@ -41,7 +41,7 @@ export default function RecuperarContrasenaPage() {
         icon="✉️"
       >
         <div style={{ textAlign: "center" }}>
-          
+          <a
             href="/login"
             style={{
               display: "inline-block",

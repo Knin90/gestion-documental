@@ -32,16 +32,26 @@ async function getUserAndOrg() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("org_id")
+    .select("org_id, permission, role")
     .eq("id", user.id)
     .single();
 
   // Sin org_id el usuario no puede operar documentos
   if (!profile?.org_id) {
-    return { user, orgId: null as string | null };
+    return { user, orgId: null as string | null, permission: "viewer" as const, role: "user" as const };
   }
 
-  return { user, orgId: profile.org_id as string };
+  return {
+    user,
+    orgId: profile.org_id as string,
+    permission: (profile.permission || "editor") as "editor" | "viewer",
+    role: (profile.role || "user") as string,
+  };
+}
+
+// Helper: verificar si el usuario puede modificar documentos
+function puedeModificar(permission: string, role: string): boolean {
+  return role === "admin" || permission === "editor";
 }
 
 // ─── PDF upload ──────────────────────────────────────────────────────────────
@@ -75,10 +85,14 @@ async function subirPdf(archivo: File, documentId: string, userId: string) {
 
 // ─── Crear documento ─────────────────────────────────────────────────────────
 export async function crearDocumento(formData: FormData): Promise<ActionResult> {
-  const { user, orgId } = await getUserAndOrg();
+  const { user, orgId, permission, role } = await getUserAndOrg();
 
   if (!orgId) {
     return { success: false, error: "Tu cuenta no está asociada a ninguna organización." };
+  }
+
+  if (!puedeModificar(permission, role)) {
+    return { success: false, error: "No tienes permiso para crear documentos." };
   }
 
   const resultado = documentoSchema.safeParse({
@@ -136,10 +150,14 @@ export async function actualizarDocumento(
   id: string,
   formData: FormData
 ): Promise<ActionResult> {
-  const { user, orgId } = await getUserAndOrg();
+  const { user, orgId, permission, role } = await getUserAndOrg();
 
   if (!orgId) {
     return { success: false, error: "Tu cuenta no está asociada a ninguna organización." };
+  }
+
+  if (!puedeModificar(permission, role)) {
+    return { success: false, error: "No tienes permiso para editar documentos. Solicítaselo al administrador." };
   }
 
   const resultado = documentoSchema.safeParse({
@@ -192,10 +210,14 @@ export async function actualizarDocumento(
 
 // ─── Eliminar documento (borrado lógico) ─────────────────────────────────────
 export async function eliminarDocumento(id: string): Promise<ActionResult> {
-  const { user, orgId } = await getUserAndOrg();
+  const { user, orgId, permission, role } = await getUserAndOrg();
 
   if (!orgId) {
     return { success: false, error: "Tu cuenta no está asociada a ninguna organización." };
+  }
+
+  if (!puedeModificar(permission, role)) {
+    return { success: false, error: "No tienes permiso para eliminar documentos." };
   }
 
   const admin = getAdminClient();
@@ -220,10 +242,14 @@ export async function eliminarDocumento(id: string): Promise<ActionResult> {
 export async function eliminarTodosDocumentos(
   tipo: "recibido" | "enviado"
 ): Promise<ActionResult> {
-  const { user, orgId } = await getUserAndOrg();
+  const { user, orgId, role } = await getUserAndOrg();
 
   if (!orgId) {
     return { success: false, error: "Tu cuenta no está asociada a ninguna organización." };
+  }
+
+  if (role !== "admin") {
+    return { success: false, error: "Solo el administrador puede eliminar todos los documentos." };
   }
 
   const admin = getAdminClient();

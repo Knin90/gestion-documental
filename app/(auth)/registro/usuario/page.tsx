@@ -35,7 +35,7 @@ export default function RegistroUsuarioPage() {
 
     const { data: permitido } = await supabase
       .from("allowed_emails")
-      .select("email, access_code, is_active, org_id")
+      .select("email, access_code, is_active, org_id, permission")
       .eq("access_code", accessCode)
       .maybeSingle();
 
@@ -90,7 +90,7 @@ export default function RegistroUsuarioPage() {
     if (permitido.org_id) {
       await supabase
         .from("profiles")
-        .update({ org_id: permitido.org_id, full_name: fullName, role: "user" })
+        .update({ org_id: permitido.org_id, full_name: fullName, role: "user", permission: permitido.permission || "editor" })
         .eq("id", authData.user.id);
     }
 

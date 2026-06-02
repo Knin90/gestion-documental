@@ -19,15 +19,18 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Obtener org_id del perfil
+  // Obtener org_id, permission y role del perfil
   const { data: profile } = await supabase
     .from("profiles")
-    .select("org_id")
+    .select("org_id, permission, role")
     .eq("id", user.id)
     .single();
 
   if (!profile?.org_id) redirect("/login");
   const orgId = profile.org_id;
+  
+  // Control de permisos: admin o editor pueden modificar, viewer solo lectura
+  const puedeEditar = profile.role === "admin" || profile.permission === "editor";
 
   const params = await searchParams;
   const tipo: TipoDocumento = params.tipo === "enviado" ? "enviado" : "recibido";
@@ -63,13 +66,15 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
         </div>
         <div className="flex items-center gap-3">
           <SelectorTipoDashboard tipoActual={tipo} />
-          <Link
-            href="/documentos/nuevo"
-            className="flex items-center gap-2 rounded-lg bg-sidebar-primary px-4 py-2 text-sm font-medium text-sidebar-primary-foreground hover:opacity-90 transition-opacity"
-          >
-            <FilePlus className="h-4 w-4" />
-            Nuevo
-          </Link>
+          {puedeEditar && (
+            <Link
+              href="/documentos/nuevo"
+              className="flex items-center gap-2 rounded-lg bg-sidebar-primary px-4 py-2 text-sm font-medium text-sidebar-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              <FilePlus className="h-4 w-4" />
+              Nuevo
+            </Link>
+          )}
         </div>
       </div>
 
@@ -94,16 +99,18 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
         >
           Solo pendientes de PDF
         </Link>
-        <EliminarTodosBoton tipo={tipo} total={count ?? 0} />
+        {puedeEditar && <EliminarTodosBoton tipo={tipo} total={count ?? 0} />}
       </div>
 
       {!documentos || documentos.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-16 gap-3">
           <FileWarning className="h-8 w-8 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">No hay documentos para mostrar</p>
-          <Link href="/documentos/nuevo" className="text-sm font-medium text-sidebar-primary hover:underline">
-            Crear el primero
-          </Link>
+          {puedeEditar && (
+            <Link href="/documentos/nuevo" className="text-sm font-medium text-sidebar-primary hover:underline">
+              Crear el primero
+            </Link>
+          )}
         </div>
       ) : (
         <>
@@ -148,7 +155,7 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
                     <td className="px-4 py-3">
                       {doc.pdf_url ? (
                         <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                          Con PDF
+                          PDF
                         </span>
                       ) : (
                         <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
@@ -161,10 +168,14 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
                         <Link href={`/documentos/${doc.id}`} className="rounded px-2 py-1 text-xs font-medium hover:bg-muted transition-colors" style={{color: 'var(--sidebar-primary)'}}>
                           Ver
                         </Link>
-                        <Link href={`/documentos/${doc.id}/editar`} className="rounded px-2 py-1 text-xs font-medium hover:bg-muted transition-colors" style={{color: 'var(--foreground)'}}>
-                          Editar
-                        </Link>
-                        <EliminarDocumentoBoton id={doc.id} />
+                        {puedeEditar && (
+                          <>
+                            <Link href={`/documentos/${doc.id}/editar`} className="rounded px-2 py-1 text-xs font-medium hover:bg-muted transition-colors" style={{color: 'var(--foreground)'}}>
+                              Editar
+                            </Link>
+                            <EliminarDocumentoBoton id={doc.id} />
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -202,8 +213,12 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
                 </p>
                 <div className="flex items-center gap-2 pt-1">
                   <Link href={`/documentos/${doc.id}`} className="rounded px-3 py-1 text-xs font-medium border hover:bg-muted transition-colors" style={{color: 'var(--sidebar-primary)'}}>Ver</Link>
-                  <Link href={`/documentos/${doc.id}/editar`} className="rounded px-3 py-1 text-xs font-medium border hover:bg-muted transition-colors">Editar</Link>
-                  <EliminarDocumentoBoton id={doc.id} />
+                  {puedeEditar && (
+                    <>
+                      <Link href={`/documentos/${doc.id}/editar`} className="rounded px-3 py-1 text-xs font-medium border hover:bg-muted transition-colors">Editar</Link>
+                      <EliminarDocumentoBoton id={doc.id} />
+                    </>
+                  )}
                 </div>
               </div>
             ))}

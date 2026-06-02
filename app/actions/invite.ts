@@ -34,7 +34,7 @@ async function verificarAdmin() {
   return { user, orgId: perfil.org_id as string };
 }
 
-export async function invitarUsuario(nombre: string, correo: string): Promise<ActionResult> {
+export async function invitarUsuario(nombre: string, correo: string, permission: "editor" | "viewer" = "editor"): Promise<ActionResult> {
   const resultado = await verificarAdmin();
   if (!resultado) return { success: false, error: "No tienes permisos" };
 
@@ -101,6 +101,39 @@ export async function eliminarUsuario(email: string): Promise<ActionResult> {
 
   await admin.from("allowed_emails").delete().eq("email", email);
   await admin.from("profiles").delete().eq("email", email);
+
+  revalidatePath("/perfil");
+  return { success: true };
+}
+
+export async function cambiarPermisoUsuario(email: string, permission: "editor" | "viewer"): Promise<ActionResult> {
+  const resultado = await verificarAdmin();
+  if (!resultado) return { success: false, error: "No tienes permisos" };
+  const { user, orgId } = resultado;
+
+  if (email === user.email) {
+    return { success: false, error: "No puedes cambiar tu propio permiso" };
+  }
+
+  const admin = getAdminClient();
+
+  // Actualizar en allowed_emails
+  const { error: errorAllowed } = await admin
+    .from("allowed_emails")
+    .update({ permission })
+    .eq("email", email)
+    .eq("org_id", orgId);
+
+  if (errorAllowed) {
+    return { success: false, error: "Error al actualizar permisos" };
+  }
+
+  // Actualizar en profiles si el usuario ya está registrado
+  await admin
+    .from("profiles")
+    .update({ permission })
+    .eq("email", email)
+    .eq("org_id", orgId);
 
   revalidatePath("/perfil");
   return { success: true };

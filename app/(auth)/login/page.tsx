@@ -76,6 +76,18 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [showVerifying, setShowVerifying] = useState(false);
+
+  function checkStrength(val: string) {
+    let s = 0;
+    if (val.length >= 8) s++;
+    if (val.length >= 12) s++;
+    if (/[A-Z]/.test(val)) s++;
+    if (/[0-9]/.test(val)) s++;
+    if (/[^A-Za-z0-9]/.test(val)) s++;
+    setPasswordStrength(s);
+  }
 
 
 
@@ -84,8 +96,10 @@ export default function LoginPage() {
     event.preventDefault();
     setError(null);
     setLoading(true);
+    setShowVerifying(true);
     const formData = new FormData(event.currentTarget);
     const result = await login(formData);
+    setShowVerifying(false);
     if (result?.error) {
       setError(result.error);
       setLoading(false);
@@ -133,12 +147,44 @@ export default function LoginPage() {
             </div>
             <div className="relative">
               <input id="password" name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" required placeholder="••••••••••••" disabled={loading}
+                onChange={(e) => checkStrength(e.target.value)}
                 style={{ height: "52px", padding: "0 52px 0 18px", borderRadius: "12px", border: "1px solid #d1d5db", backgroundColor: "#f9fafb", color: "#111827", fontSize: "0.95rem", outline: "none", boxSizing: "border-box", width: "100%" }} />
               <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 className="absolute right-4 top-1/2 -translate-y-1/2 focus:outline-none p-2" style={{ color: "#6B7280" }}>
                 <EyeIcon visible={showPassword} />
               </button>
+              {/* Demo text verificando */}
+              {showVerifying && (
+                <div style={{
+                  position: "absolute", left: 0, top: 0, width: "100%", height: "100%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  backgroundColor: "#f9fafb", borderRadius: "12px",
+                  animation: "slideUp 0.4s ease forwards",
+                  fontSize: "0.9rem", color: "#6B7280", fontFamily: "monospace",
+                  pointerEvents: "none",
+                }}>
+                  <span className="loading-dots-inline">
+                    Verificando<span>.</span><span>.</span><span>.</span>
+                  </span>
+                </div>
+              )}
             </div>
+            {/* Barra de fortaleza */}
+            {passwordStrength > 0 && (
+              <div style={{ marginTop: "6px" }}>
+                <div style={{ height: "4px", backgroundColor: "#e5e7eb", borderRadius: "2px", overflow: "hidden" }}>
+                  <div style={{
+                    height: "100%", borderRadius: "2px",
+                    transition: "width 0.3s ease, background 0.3s ease",
+                    width: passwordStrength <= 2 ? "33%" : passwordStrength <= 3 ? "66%" : "100%",
+                    backgroundColor: passwordStrength <= 2 ? "#ef4444" : passwordStrength <= 3 ? "#f59e0b" : "#10b981",
+                  }} />
+                </div>
+                <p style={{ fontSize: "0.75rem", marginTop: "4px", color: passwordStrength <= 2 ? "#ef4444" : passwordStrength <= 3 ? "#f59e0b" : "#10b981" }}>
+                  {passwordStrength <= 2 ? "🔴 Contraseña débil" : passwordStrength <= 3 ? "🟡 Contraseña media" : "🟢 Contraseña fuerte"}
+                </p>
+              </div>
+            )}
           </div>
 
           {error && (
@@ -172,6 +218,16 @@ export default function LoginPage() {
               0%, 60% { opacity: 0; }
               30% { opacity: 1; }
             }
+            @keyframes slideUp {
+              0% { opacity: 0; transform: translateY(8px); }
+              100% { opacity: 1; transform: translateY(0); }
+            }
+            .loading-dots-inline span {
+              animation: dotBlink 1.4s infinite;
+              opacity: 0;
+            }
+            .loading-dots-inline span:nth-child(2) { animation-delay: 0.2s; }
+            .loading-dots-inline span:nth-child(3) { animation-delay: 0.4s; }
           `}</style>
         </form>
 

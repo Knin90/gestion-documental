@@ -4,8 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Eye, EyeOff } from "lucide-react";
-import dynamic from "next/dynamic";
-const OceanBackground = dynamic(() => import("@/components/layout/ocean-background").then(m => ({ default: m.OceanBackground })), { ssr: false });
 
 export default function RegistroOrganizacionPage() {
   const router = useRouter();
@@ -117,7 +115,7 @@ export default function RegistroOrganizacionPage() {
         className="min-h-screen flex items-center justify-center px-8"
         style={{ position: "relative" }}
       >
-        <OceanBackground />
+        
         <div
           className="relative z-10 w-full max-w-xl rounded-3xl p-10 text-center"
           style={{
@@ -148,7 +146,7 @@ export default function RegistroOrganizacionPage() {
       className="min-h-screen flex items-center justify-center px-8 py-8"
       style={{ position: "relative" }}
     >
-      <OceanBackground />
+      
       <div
         className="auth-card relative z-10 w-full max-w-xl rounded-3xl flex flex-col"
         style={{

@@ -2,8 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { ScrambleText } from "@/components/layout/scramble-text";
-import dynamic from "next/dynamic";
-const OceanBackground = dynamic(() => import("@/components/layout/ocean-background").then(m => ({ default: m.OceanBackground })), { ssr: false });
 
 export default function RegistroSeleccionPage() {
   const router = useRouter();
@@ -13,7 +11,7 @@ export default function RegistroSeleccionPage() {
       className="min-h-screen flex items-center justify-center px-8 py-8"
       style={{ position: "relative" }}
     >
-      <OceanBackground />
+      
 
       <div
         className="auth-card relative z-10 w-full max-w-xl rounded-3xl flex flex-col"

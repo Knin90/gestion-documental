@@ -73,7 +73,7 @@ export default function LoginPage() {
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
           border: "none",
-          boxShadow: "10px 10px 24px rgba(163,190,196,0.45), -10px -10px 24px rgba(255,255,255,0.9)",
+          boxShadow: "6px 6px 20px rgba(163,190,196,0.5), 0px 2px 8px rgba(163,190,196,0.2)",
           transition: "box-shadow 0.3s ease",
         }}
       >

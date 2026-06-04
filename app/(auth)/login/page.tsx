@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, memo } from "react";
 import { login } from "@/app/actions/auth";
 import { ScrambleText } from "@/components/layout/scramble-text";
 import { SplashScreen } from "@/components/layout/splash-screen";
@@ -36,6 +36,39 @@ function GoogleIcon() {
     </svg>
   );
 }
+
+const LoginVideo = memo(function LoginVideo() {
+  return (
+    <div className="px-14 pt-6 pb-4">
+      <div style={{ width: "70%", margin: "0 auto", position: "relative" }}>
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          ref={(el) => {
+            if (el) {
+              el.muted = true;
+              el.load();
+              el.play().catch(() => {});
+            }
+          }}
+          style={{ width: "100%", height: "auto", display: "block", borderRadius: "12px", mixBlendMode: "multiply" }}
+        >
+          <source src="/login.webm" type="video/webm" />
+          <source src="/login.mp4" type="video/mp4" />
+        </video>
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          background: "radial-gradient(ellipse 90% 90% at 50% 50%, transparent 55%, rgba(255,255,255,0.85) 75%, rgba(255,255,255,1) 100%)",
+          pointerEvents: "none",
+        }} />
+      </div>
+    </div>
+  );
+});
 
 export default function LoginPage() {
   const [showSplash, setShowSplash] = useState(true);
@@ -81,35 +114,7 @@ export default function LoginPage() {
         }}
       >
         {/* BLOQUE SUPERIOR */}
-        <div className="px-14 pt-6 pb-4">
-          <div style={{ width: "70%", margin: "0 auto", position: "relative" }}>
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="auto"
-              ref={(el) => {
-                if (el) {
-                  el.muted = true;
-                  el.load();
-                  el.play().catch(() => {});
-                }
-              }}
-              style={{ width: "100%", height: "auto", display: "block", borderRadius: "12px", mixBlendMode: "multiply" }}
-            >
-              <source src="/login.webm" type="video/webm" />
-              <source src="/login.mp4" type="video/mp4" />
-            </video>
-            {/* Overlay que difumina los bordes */}
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              background: "radial-gradient(ellipse 90% 90% at 50% 50%, transparent 55%, rgba(255,255,255,0.85) 75%, rgba(255,255,255,1) 100%)",
-              pointerEvents: "none",
-            }} />
-          </div>
-        </div>
+        <LoginVideo />
 
         <div className="mx-14" style={{ height: "1px", backgroundColor: "#e5e7eb" }} />
 

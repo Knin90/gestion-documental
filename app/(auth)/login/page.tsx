@@ -78,7 +78,7 @@ export default function LoginPage() {
         }}
       >
         {/* BLOQUE SUPERIOR */}
-        <div className="px-14 pt-8 pb-6">
+        <div className="px-14 pt-6 pb-4">
           <div style={{ width: "70%", margin: "0 auto", position: "relative" }}>
             <video
               autoPlay
@@ -142,7 +142,7 @@ export default function LoginPage() {
 
           <button type="submit" disabled={loading}
             className="w-full font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
-            style={{ height: "52px", borderRadius: "12px", border: "none", backgroundColor: "white", color: "#053931", fontSize: "1rem", cursor: loading ? "not-allowed" : "pointer", marginTop: "4px" }}>
+            style={{ height: "52px", borderRadius: "12px", border: "none", backgroundColor: "#053931", color: "#CBEFEB", fontSize: "1rem", cursor: loading ? "not-allowed" : "pointer", marginTop: "4px" }}>
             {loading ? "Iniciando sesión..." : "Iniciar sesión"}
           </button>
         </form>

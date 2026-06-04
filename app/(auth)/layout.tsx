@@ -107,14 +107,7 @@ export default function AuthLayout({
           animation: rgbSplit 1.5s ease-out 0.3s both;
         }
 
-        .auth-card form > div,
-        .auth-card form > button {
-          animation: inputSlide 1s ease-out both;
-        }
-        .auth-card form > div:nth-child(1) { animation-delay: 0.4s; }
-        .auth-card form > div:nth-child(2) { animation-delay: 0.7s; }
-        .auth-card form > div:nth-child(3) { animation-delay: 1.0s; }
-        .auth-card form > button { animation-delay: 1.3s; }
+
 
         .auth-scan-line {
           position: fixed;

@@ -28,9 +28,9 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
 
   if (!profile?.org_id) redirect("/login");
   const orgId = profile.org_id;
+  const puedeEditar = profile.role === "admin" || profile.permission === "editor";
   
   // Control de permisos: admin o editor pueden modificar, viewer solo lectura
-  const puedeEditar = profile.role === "admin" || profile.permission === "editor";
 
   const params = await searchParams;
   const tipo: TipoDocumento = params.tipo === "enviado" ? "enviado" : "recibido";

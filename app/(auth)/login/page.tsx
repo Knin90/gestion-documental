@@ -93,7 +93,7 @@ export default function LoginPage() {
                   el.play().catch(() => {});
                 }
               }}
-              style={{ width: "100%", height: "auto", display: "block", borderRadius: "12px" }}
+              style={{ width: "100%", height: "auto", display: "block", borderRadius: "12px", mixBlendMode: "multiply" }}
             >
               <source src="/login.webm" type="video/webm" />
               <source src="/login.mp4" type="video/mp4" />

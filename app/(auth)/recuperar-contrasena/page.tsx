@@ -42,7 +42,7 @@ export default function RecuperarContrasenaPage() {
       >
         <div style={{ textAlign: "center" }}>
           <a
-            href="/login"
+            href="/login?nosplash=1"
             style={{
               display: "inline-block",
               padding: "10px 24px",
@@ -134,7 +134,7 @@ export default function RecuperarContrasenaPage() {
       </form>
 
       <p style={{ textAlign: "center", marginTop: "1.5rem", fontSize: "0.875rem" }}>
-        <a href="/login" style={{ color: "rgba(203,239,235,0.6)", textDecoration: "underline" }}>
+        <a href="/login?nosplash=1" style={{ color: "rgba(203,239,235,0.6)", textDecoration: "underline" }}>
           Volver al login
         </a>
       </p>

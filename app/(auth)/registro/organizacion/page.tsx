@@ -180,7 +180,7 @@ export default function RegistroOrganizacionPage() {
               type="text"
               required
               maxLength={200}
-              placeholder="Ej: Ministerio de Educación"
+              placeholder="Ej: Organización S.A."
               style={inputStyle}
               disabled={loading}
             />
@@ -273,7 +273,7 @@ export default function RegistroOrganizacionPage() {
 
           <p className="text-center text-sm" style={{ color: "rgba(203,239,235,0.55)" }}>
             ¿Ya tienes cuenta?{" "}
-            <a href="/login" style={{ color: "#CBEFEB" }} className="hover:underline font-medium">
+            <a href="/login?nosplash=1" style={{ color: "#CBEFEB" }} className="hover:underline font-medium">
               Inicia sesión
             </a>
           </p>

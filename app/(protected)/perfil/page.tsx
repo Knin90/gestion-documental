@@ -136,7 +136,7 @@ export default function PerfilPage() {
       <div className="p-6 max-w-3xl space-y-6 animate-pulse">
         <div className="h-8 w-32 rounded-lg bg-muted" />
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="rounded-xl border bg-card p-6 space-y-4">
+          <div key={i} className="neu-card rounded-xl bg-card p-6 space-y-4">
             <div className="h-5 w-40 rounded bg-muted" />
             <div className="h-10 w-full rounded-lg bg-muted" />
           </div>
@@ -153,7 +153,7 @@ export default function PerfilPage() {
       </div>
 
       {/* Información personal */}
-      <form onSubmit={handleGuardarNombre} className="rounded-xl border bg-card p-6 space-y-4">
+      <form onSubmit={handleGuardarNombre} className="neu-card rounded-xl bg-card p-6 space-y-4">
         <h2 className="text-sm font-semibold flex items-center gap-2"><User className="h-4 w-4" />Información personal</h2>
         <div className="space-y-2">
           <label htmlFor="nombre" className="text-sm font-medium">Nombre completo</label>
@@ -172,7 +172,7 @@ export default function PerfilPage() {
 
       {/* Agregar usuario — solo admin */}
       {esAdmin && (
-        <div className="rounded-xl border bg-card p-6 space-y-4">
+        <div className="neu-card rounded-xl bg-card p-6 space-y-4">
           <h2 className="text-sm font-semibold flex items-center gap-2"><UserPlus className="h-4 w-4" />Agregar usuario</h2>
           <form onSubmit={handleInvitar} className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
@@ -220,7 +220,7 @@ export default function PerfilPage() {
 
       {/* Tabla de usuarios — solo admin */}
       {esAdmin && usuarios.length > 0 && (
-        <div className="rounded-xl border bg-card p-6 space-y-4">
+        <div className="neu-card rounded-xl bg-card p-6 space-y-4">
           <h2 className="text-sm font-semibold flex items-center gap-2"><Users className="h-4 w-4" />Usuarios ({usuarios.length})</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -284,7 +284,7 @@ export default function PerfilPage() {
       )}
 
       {/* Cambiar contraseña */}
-      <form onSubmit={handleCambiarPassword} className="rounded-xl border bg-card p-6 space-y-4">
+      <form onSubmit={handleCambiarPassword} className="neu-card rounded-xl bg-card p-6 space-y-4">
         <h2 className="text-sm font-semibold flex items-center gap-2"><KeyRound className="h-4 w-4" />Cambiar contraseña</h2>
         <div className="space-y-2">
           <label className="text-sm font-medium">Nueva contraseña</label>

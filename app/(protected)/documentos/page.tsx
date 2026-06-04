@@ -103,7 +103,7 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
       </div>
 
       {!documentos || documentos.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-16 gap-3">
+        <div className="neu-card flex flex-col items-center justify-center rounded-xl bg-card py-16 gap-3">
           <FileWarning className="h-8 w-8 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">No hay documentos para mostrar</p>
           {puedeEditar && (

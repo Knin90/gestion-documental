@@ -19,7 +19,7 @@ interface TarjetaTotalProps {
 
 function TarjetaTotal({ titulo, valor, icono: Icono, descripcion }: TarjetaTotalProps) {
   return (
-    <div className="rounded-xl border bg-card p-6 shadow-sm">
+    <div className="neu-card rounded-xl bg-card p-6 shadow-sm">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-muted-foreground">{titulo}</p>
         <Icono className="h-4 w-4 text-muted-foreground" />
@@ -55,7 +55,7 @@ interface TopListaProps {
 
 function TopLista({ titulo, items, sinDatosTexto }: TopListaProps) {
   return (
-    <div className="rounded-xl border bg-card p-6">
+    <div className="neu-card rounded-xl bg-card p-6">
       <h3 className="mb-4 text-sm font-semibold text-card-foreground">{titulo}</h3>
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">{sinDatosTexto}</p>

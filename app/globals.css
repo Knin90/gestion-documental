@@ -102,3 +102,17 @@ body {
 .text-table-header { color: var(--table-header-foreground); }
 .bg-table-row-a { background-color: var(--table-row-a); }
 .bg-table-row-b { background-color: var(--table-row-b); }
+
+/* Neumorfismo en tarjetas internas */
+.neu-card {
+  background: var(--card);
+  border: none !important;
+  border-radius: 16px;
+  box-shadow: 8px 8px 16px rgba(0,0,0,0.12),
+              -8px -8px 16px rgba(255,255,255,0.7);
+  transition: box-shadow 0.3s ease;
+}
+.neu-card:hover {
+  box-shadow: 12px 12px 20px rgba(0,0,0,0.15),
+              -12px -12px 20px rgba(255,255,255,0.8);
+}

@@ -69,11 +69,11 @@ export default function LoginPage() {
         id="login-card"
         className="relative z-10 w-full max-w-2xl rounded-3xl flex flex-col min-h-[700px]"
         style={{
-          backgroundColor: "rgba(18, 28, 38, 0.85)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
+          backgroundColor: "rgba(255,255,255,0.75)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
           border: "none",
-          boxShadow: "8px 8px 20px rgba(0,0,0,0.5), -8px -8px 20px rgba(255,255,255,0.04)",
+          boxShadow: "10px 10px 24px rgba(163,190,196,0.45), -10px -10px 24px rgba(255,255,255,0.9)",
           transition: "box-shadow 0.3s ease",
         }}
       >

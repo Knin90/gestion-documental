@@ -69,11 +69,12 @@ export default function LoginPage() {
         id="login-card"
         className="relative z-10 w-full max-w-2xl rounded-3xl flex flex-col min-h-[700px]"
         style={{
-          backgroundColor: "rgba(10, 10, 10, 0.55)",
+          backgroundColor: "rgba(18, 28, 38, 0.85)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
-          border: "1px solid rgba(203, 239, 235, 0.15)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+          border: "none",
+          boxShadow: "8px 8px 20px rgba(0,0,0,0.5), -8px -8px 20px rgba(255,255,255,0.04)",
+          transition: "box-shadow 0.3s ease",
         }}
       >
         {/* BLOQUE SUPERIOR */}

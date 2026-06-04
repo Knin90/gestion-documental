@@ -79,7 +79,7 @@ export default function LoginPage() {
       >
         {/* BLOQUE SUPERIOR */}
         <div className="px-14 pt-8 pb-6">
-          <div style={{ width: "70%", margin: "0 auto", borderRadius: "16px", overflow: "hidden" }}>
+          <div style={{ width: "70%", margin: "0 auto", borderRadius: "16px", overflow: "hidden", maskImage: "radial-gradient(ellipse 85% 85% at 50% 50%, black 50%, transparent 100%)", WebkitMaskImage: "radial-gradient(ellipse 85% 85% at 50% 50%, black 50%, transparent 100%)" }}>
             <video
               autoPlay
               loop

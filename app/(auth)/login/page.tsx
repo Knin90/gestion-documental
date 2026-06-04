@@ -101,26 +101,26 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="mx-14" style={{ height: "1px", backgroundColor: "rgba(203,239,235,0.12)" }} />
+        <div className="mx-14" style={{ height: "1px", backgroundColor: "#e5e7eb" }} />
 
         {/* FORMULARIO */}
         <form onSubmit={handleSubmit} className="px-14 flex flex-col gap-5 flex-1 justify-center py-12">
           <div className="flex flex-col gap-2">
-            <label htmlFor="email" className="text-sm font-medium" style={{ color: "rgba(203,239,235,0.8)" }}>Correo electrónico</label>
+            <label htmlFor="email" className="text-sm font-medium" style={{ color: "#374151" }}>Correo electrónico</label>
             <input id="email" name="email" type="email" autoComplete="email" required placeholder="correo@ejemplo.com" disabled={loading}
-              style={{ height: "52px", padding: "0 18px", borderRadius: "12px", border: "1px solid rgba(203,239,235,0.2)", backgroundColor: "rgba(255,255,255,0.08)", color: "white", fontSize: "0.95rem", outline: "none", boxSizing: "border-box", width: "100%" }} />
+              style={{ height: "52px", padding: "0 18px", borderRadius: "12px", border: "1px solid #d1d5db", backgroundColor: "#f9fafb", color: "#111827", fontSize: "0.95rem", outline: "none", boxSizing: "border-box", width: "100%" }} />
           </div>
 
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
-              <label htmlFor="password" className="text-sm font-medium" style={{ color: "rgba(203,239,235,0.8)" }}>Contraseña</label>
-              <a href="/recuperar-contrasena" className="text-xs hover:underline" style={{ color: "rgba(203,239,235,0.6)" }}>¿Olvidaste tu contraseña?</a>
+              <label htmlFor="password" className="text-sm font-medium" style={{ color: "#374151" }}>Contraseña</label>
+              <a href="/recuperar-contrasena" className="text-xs hover:underline" style={{ color: "#6B7280" }}>¿Olvidaste tu contraseña?</a>
             </div>
             <div className="relative">
               <input id="password" name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" required placeholder="••••••••••••" disabled={loading}
-                style={{ height: "52px", padding: "0 52px 0 18px", borderRadius: "12px", border: "1px solid rgba(203,239,235,0.2)", backgroundColor: "rgba(255,255,255,0.08)", color: "white", fontSize: "0.95rem", outline: "none", boxSizing: "border-box", width: "100%" }} />
+                style={{ height: "52px", padding: "0 52px 0 18px", borderRadius: "12px", border: "1px solid #d1d5db", backgroundColor: "#f9fafb", color: "#111827", fontSize: "0.95rem", outline: "none", boxSizing: "border-box", width: "100%" }} />
               <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                className="absolute right-4 top-1/2 -translate-y-1/2 focus:outline-none p-2" style={{ color: "rgba(203,239,235,0.6)" }}>
+                className="absolute right-4 top-1/2 -translate-y-1/2 focus:outline-none p-2" style={{ color: "#6B7280" }}>
                 <EyeIcon visible={showPassword} />
               </button>
             </div>
@@ -143,14 +143,14 @@ export default function LoginPage() {
         {/* SOCIAL + REGISTRO */}
         <div className="px-14 pt-8 pb-12 flex flex-col gap-5">
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.15)" }} />
-            <span className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.45)" }}>O inicie sesión con</span>
-            <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.15)" }} />
+            <div className="flex-1 h-px" style={{ backgroundColor: "#e5e7eb" }} />
+            <span className="text-xs font-medium" style={{ color: "#9ca3af" }}>O inicie sesión con</span>
+            <div className="flex-1 h-px" style={{ backgroundColor: "#e5e7eb" }} />
           </div>
 
           <div className="grid grid-cols-2 gap-4 sm:gap-4">
             <button type="button" className="flex items-center justify-center gap-2 font-medium transition-all hover:opacity-80"
-              style={{ height: "52px", minHeight: "52px", borderRadius: "12px", backgroundColor: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.2)", color: "white", fontSize: "0.9rem", cursor: "pointer" }}
+              style={{ height: "52px", minHeight: "52px", borderRadius: "12px", backgroundColor: "#f3f4f6", border: "1px solid #e5e7eb", color: "#374151", fontSize: "0.9rem", cursor: "pointer" }}
               onClick={async () => {
                 const { createClient } = await import("@/lib/supabase/client");
                 const supabase = createClient();
@@ -159,7 +159,7 @@ export default function LoginPage() {
               <GoogleIcon /> Google
             </button>
             <button type="button" className="flex items-center justify-center gap-2 font-medium transition-all hover:opacity-80"
-              style={{ height: "52px", minHeight: "52px", borderRadius: "12px", backgroundColor: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.2)", color: "white", fontSize: "0.9rem", cursor: "pointer" }}
+              style={{ height: "52px", minHeight: "52px", borderRadius: "12px", backgroundColor: "#f3f4f6", border: "1px solid #e5e7eb", color: "#374151", fontSize: "0.9rem", cursor: "pointer" }}
               onClick={async () => {
                 const { createClient } = await import("@/lib/supabase/client");
                 const supabase = createClient();
@@ -170,9 +170,9 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <p className="text-center text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
+          <p className="text-center text-sm" style={{ color: "#6B7280" }}>
             ¿No tienes cuenta?{" "}
-            <a href="/registro" className="font-semibold hover:underline" style={{ color: "rgba(203,239,235,1)" }}>Crear cuenta</a>
+            <a href="/registro" className="font-semibold hover:underline" style={{ color: "#053931" }}>Crear cuenta</a>
           </p>
         </div>
       </div>

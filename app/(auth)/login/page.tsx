@@ -141,10 +141,25 @@ export default function LoginPage() {
           )}
 
           <button type="submit" disabled={loading}
-            className="w-full font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
-            style={{ height: "52px", borderRadius: "12px", border: "none", backgroundColor: "#053931", color: "#CBEFEB", fontSize: "1rem", cursor: loading ? "not-allowed" : "pointer", marginTop: "4px" }}>
-            {loading ? "Iniciando sesión..." : "Iniciar sesión"}
+            className="w-full font-semibold transition-all duration-200 disabled:cursor-not-allowed hover:opacity-90"
+            style={{ height: "52px", borderRadius: "12px", border: "none", backgroundColor: "#053931", color: "#CBEFEB", fontSize: "1rem", cursor: loading ? "not-allowed" : "pointer", marginTop: "4px", opacity: loading ? 1 : 1 }}>
+            {loading ? (
+              <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "2px" }}>
+                Verificando
+                <span style={{ display: "inline-flex", gap: "2px", marginLeft: "4px" }}>
+                  <span style={{ animation: "dotBlink 1.4s infinite", opacity: 0, fontSize: "1.2rem", lineHeight: 1 }}>.</span>
+                  <span style={{ animation: "dotBlink 1.4s infinite 0.2s", opacity: 0, fontSize: "1.2rem", lineHeight: 1 }}>.</span>
+                  <span style={{ animation: "dotBlink 1.4s infinite 0.4s", opacity: 0, fontSize: "1.2rem", lineHeight: 1 }}>.</span>
+                </span>
+              </span>
+            ) : "Iniciar sesión"}
           </button>
+          <style>{`
+            @keyframes dotBlink {
+              0%, 60% { opacity: 0; }
+              30% { opacity: 1; }
+            }
+          `}</style>
         </form>
 
         {/* SOCIAL + REGISTRO */}

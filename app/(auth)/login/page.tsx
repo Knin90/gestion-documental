@@ -79,7 +79,7 @@ export default function LoginPage() {
       >
         {/* BLOQUE SUPERIOR */}
         <div className="px-14 pt-8 pb-6">
-          <div style={{ width: "70%", margin: "0 auto" }}>
+          <div style={{ width: "70%", margin: "0 auto", position: "relative" }}>
             <video
               autoPlay
               loop
@@ -93,11 +93,18 @@ export default function LoginPage() {
                   el.play().catch(() => {});
                 }
               }}
-              style={{ width: "100%", height: "auto", display: "block", maskImage: "radial-gradient(ellipse 80% 75% at 50% 50%, black 40%, transparent 100%)", WebkitMaskImage: "radial-gradient(ellipse 80% 75% at 50% 50%, black 40%, transparent 100%)" }}
+              style={{ width: "100%", height: "auto", display: "block", borderRadius: "12px" }}
             >
               <source src="/login.webm" type="video/webm" />
               <source src="/login.mp4" type="video/mp4" />
             </video>
+            {/* Overlay que difumina los bordes */}
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: "radial-gradient(ellipse 90% 90% at 50% 50%, transparent 55%, rgba(255,255,255,0.85) 75%, rgba(255,255,255,1) 100%)",
+              pointerEvents: "none",
+            }} />
           </div>
         </div>
 

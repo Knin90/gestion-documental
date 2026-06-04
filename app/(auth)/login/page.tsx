@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, memo } from "react";
+import { useState, useCallback, memo, useEffect } from "react";
 import { login } from "@/app/actions/auth";
 import { ScrambleText } from "@/components/layout/scramble-text";
 import { SplashScreen } from "@/components/layout/splash-screen";
@@ -71,7 +71,16 @@ const LoginVideo = memo(function LoginVideo() {
 });
 
 export default function LoginPage() {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("nosplash") === "1") {
+      setShowSplash(false);
+    } else {
+      setShowSplash(true);
+    }
+  }, []);
   const handleSplashDone = useCallback(() => setShowSplash(false), []);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

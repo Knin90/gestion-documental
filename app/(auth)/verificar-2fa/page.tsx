@@ -149,7 +149,7 @@ function Verificar2FAContent() {
           onClick={async () => {
             const supabase = createClient();
             await supabase.auth.signOut();
-            window.location.href = "/login";
+            window.location.href = "/login?nosplash=1";
           }}
           style={{
             color: "#48A89A",
@@ -213,7 +213,7 @@ function Verificar2FAContent() {
             onClick={async () => {
               const supabase = createClient();
               await supabase.auth.signOut();
-              window.location.href = "/login";
+              window.location.href = "/login?nosplash=1";
             }}
             style={{
               display: "block",

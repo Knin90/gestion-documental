@@ -55,6 +55,8 @@ export default async function BuscarPage({ searchParams }: PageProps) {
   const anio = params.anio ?? "";
   const tipo = params.tipo ?? "";
   const orden = params.orden === "asc" ? "asc" : "desc";
+  const pagina = Math.max(1, parseInt(params.pagina ?? "1"));
+  const desde = (pagina - 1) * BUSCAR_POR_PAGINA;
 
   const hayBusqueda = identificador || mes || anio;
 

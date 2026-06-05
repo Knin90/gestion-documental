@@ -25,13 +25,38 @@ interface DashboardChartsProps {
   datosPorAnio: DatoAnio[];
 }
 
-const estiloTooltip = {
-  backgroundColor: "hsl(var(--card))",
-  border: "1px solid hsl(var(--border))",
-  borderRadius: "8px",
-  color: "hsl(var(--card-foreground))",
-  fontSize: "12px",
-};
+// Colores según tema
+function useThemeColors() {
+  const [isDark, setIsDark] = useState(false);
+  useEffect(() => {
+    const check = () => setIsDark(document.documentElement.classList.contains("dark"));
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+  return isDark
+    ? {
+        barColor: "#BD93F9",       // Dracula purple
+        barColor2: "#8BE9FD",      // Dracula cyan
+        gridColor: "#44475A",      // Dracula selection
+        tickColor: "#6272A4",      // Dracula comment
+        tooltipBg: "#282A36",      // Dracula background
+        tooltipBorder: "#44475A",
+        tooltipColor: "#F8F8F2",
+        cursorFill: "#44475A",
+      }
+    : {
+        barColor: "#4a8a00",
+        barColor2: "#6aaa00",
+        gridColor: "#cce8a0",
+        tickColor: "#5a7a3a",
+        tooltipBg: "#ffffff",
+        tooltipBorder: "#cce8a0",
+        tooltipColor: "#1a2a0a",
+        cursorFill: "#e8f5cc",
+      };
+}
 
 export function DashboardCharts({ datosPorMes, datosPorAnio }: DashboardChartsProps) {
   return (
@@ -47,21 +72,21 @@ export function DashboardCharts({ datosPorMes, datosPorAnio }: DashboardChartsPr
         ) : (
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={datosPorMes} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <CartesianGrid strokeDasharray="3 3" stroke={colors.gridColor} />
               <XAxis
                 dataKey="mes"
-                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 11, fill: colors.tickColor }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 11, fill: colors.tickColor }}
                 axisLine={false}
                 tickLine={false}
                 allowDecimals={false}
               />
-              <Tooltip contentStyle={estiloTooltip} cursor={{ fill: "hsl(var(--muted))" }} />
-              <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Documentos" />
+              <Tooltip contentStyle={estiloTooltip} cursor={{ fill: colors.cursorFill }} />
+              <Bar dataKey="total" fill={colors.barColor} radius={[4, 4, 0, 0]} name="Documentos" />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -78,21 +103,21 @@ export function DashboardCharts({ datosPorMes, datosPorAnio }: DashboardChartsPr
         ) : (
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={datosPorAnio} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <CartesianGrid strokeDasharray="3 3" stroke={colors.gridColor} />
               <XAxis
                 dataKey="anio"
-                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 11, fill: colors.tickColor }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 11, fill: colors.tickColor }}
                 axisLine={false}
                 tickLine={false}
                 allowDecimals={false}
               />
-              <Tooltip contentStyle={estiloTooltip} cursor={{ fill: "hsl(var(--muted))" }} />
-              <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Documentos" />
+              <Tooltip contentStyle={estiloTooltip} cursor={{ fill: colors.cursorFill }} />
+              <Bar dataKey="total" fill={colors.barColor} radius={[4, 4, 0, 0]} name="Documentos" />
             </BarChart>
           </ResponsiveContainer>
         )}

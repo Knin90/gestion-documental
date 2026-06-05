@@ -32,7 +32,7 @@ const MESES = [
 const anioActual = new Date().getFullYear();
 const ANIOS = Array.from({ length: 10 }, (_, i) => anioActual - i);
 
-const BUSCAR_POR_PAGINA = 18;
+const BUSCAR_POR_PAGINA = 15;
 
 export default async function BuscarPage({ searchParams }: PageProps) {
   const supabase = await createClient();

@@ -10,6 +10,7 @@ interface PageProps {
     anio?: string;
     tipo?: string;
     orden?: string;
+    pagina?: string;
   }>;
 }
 
@@ -30,6 +31,8 @@ const MESES = [
 
 const anioActual = new Date().getFullYear();
 const ANIOS = Array.from({ length: 10 }, (_, i) => anioActual - i);
+
+const BUSCAR_POR_PAGINA = 18;
 
 export default async function BuscarPage({ searchParams }: PageProps) {
   const supabase = await createClient();
@@ -57,11 +60,12 @@ export default async function BuscarPage({ searchParams }: PageProps) {
 
   let documentos: any[] = [];
   let errorBusqueda = false;
+  let totalResultados = 0;
 
   if (hayBusqueda) {
     let query = supabase
       .from("documents")
-      .select("id, document_id, description, type, document_date, pdf_url, signed_by")
+      .select("id, document_id, description, type, document_date, pdf_url, signed_by", { count: "exact" })
       .eq("org_id", orgId)
       .is("deleted_at", null)
       .order("document_date", { ascending: orden === "asc" });
@@ -91,12 +95,14 @@ export default async function BuscarPage({ searchParams }: PageProps) {
         .lte("document_date", `${anio}-12-31`);
     }
 
-    const { data, error } = await query;
+    const queryPaginada = query.range(desde, desde + BUSCAR_POR_PAGINA - 1);
+    const { data, error, count: totalCount } = await queryPaginada;
     if (error) {
       errorBusqueda = true;
       console.error("Error en búsqueda:", error.message);
     } else {
       documentos = data ?? [];
+      totalResultados = totalCount ?? 0;
     }
   }
 
@@ -220,8 +226,8 @@ export default async function BuscarPage({ searchParams }: PageProps) {
         <>
           <p className="text-sm text-muted-foreground">
             {documentos.length === 0
-              ? "Sin resultados para esta búsqueda"
-              : `${documentos.length} resultado${documentos.length !== 1 ? "s" : ""} encontrado${documentos.length !== 1 ? "s" : ""} — ${orden === "desc" ? "más reciente primero" : "más antiguo primero"}`}
+  ? "Sin resultados para esta búsqueda"
+              : `${totalResultados} resultado${totalResultados !== 1 ? "s" : ""} encontrado${totalResultados !== 1 ? "s" : ""} — ${orden === "desc" ? "más reciente primero" : "más antiguo primero"}`}
           </p>
 
           {documentos.length === 0 ? (
@@ -231,21 +237,21 @@ export default async function BuscarPage({ searchParams }: PageProps) {
             </div>
           ) : (
             <>
-              <div className="hidden md:block rounded-xl border bg-card overflow-hidden">
+              <div className="hidden md:block rounded-xl border overflow-hidden" style={{borderColor: 'var(--border)', backgroundColor: 'var(--card)'}}>
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">ID</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Descripción</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Tipo</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Fecha</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">PDF</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Acciones</th>
+                    <tr style={{backgroundColor: 'var(--table-header)'}}>
+                      <th className="px-4 py-3 text-left font-semibold" style={{color: 'var(--table-header-foreground)'}}>ID</th>
+                      <th className="px-4 py-3 text-left font-semibold" style={{color: 'var(--table-header-foreground)'}}>Descripción</th>
+                      <th className="px-4 py-3 text-left font-semibold" style={{color: 'var(--table-header-foreground)'}}>Tipo</th>
+                      <th className="px-4 py-3 text-left font-semibold" style={{color: 'var(--table-header-foreground)'}}>Fecha</th>
+                      <th className="px-4 py-3 text-left font-semibold" style={{color: 'var(--table-header-foreground)'}}>PDF</th>
+                      <th className="px-4 py-3 text-left font-semibold" style={{color: 'var(--table-header-foreground)'}}>Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {documentos.map((doc) => (
-                      <tr key={doc.id} className="hover:bg-muted/30 transition-colors">
+                      <tr key={doc.id} style={{backgroundColor: documentos.indexOf(doc) % 2 === 0 ? 'var(--table-row-a)' : 'var(--table-row-b)'}} className="transition-colors hover:opacity-80">
                         <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
                           {doc.document_id ?? "—"}
                         </td>
@@ -338,6 +344,26 @@ export default async function BuscarPage({ searchParams }: PageProps) {
                   </Link>
                 ))}
               </div>
+              {/* Paginación */}
+              {Math.ceil(totalResultados / BUSCAR_POR_PAGINA) > 1 && (
+                <div className="flex items-center justify-between pt-2">
+                  <p className="text-sm text-muted-foreground">Página {pagina} de {Math.ceil(totalResultados / BUSCAR_POR_PAGINA)}</p>
+                  <div className="flex gap-2">
+                    {pagina > 1 && (
+                      <a href={`/buscar?identificador=${identificador}&mes=${mes}&anio=${anio}&tipo=${tipo}&orden=${orden}&pagina=${pagina - 1}`}
+                        className="rounded-lg border px-3 py-1.5 text-sm hover:bg-muted transition-colors">
+                        Anterior
+                      </a>
+                    )}
+                    {pagina < Math.ceil(totalResultados / BUSCAR_POR_PAGINA) && (
+                      <a href={`/buscar?identificador=${identificador}&mes=${mes}&anio=${anio}&tipo=${tipo}&orden=${orden}&pagina=${pagina + 1}`}
+                        className="rounded-lg border px-3 py-1.5 text-sm hover:bg-muted transition-colors">
+                        Siguiente
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </>

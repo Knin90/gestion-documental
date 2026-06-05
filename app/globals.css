@@ -10,7 +10,7 @@
   --primary: #4a8a00;
   --primary-foreground: #ffffff;
   --input: #d8ecc0;
-  --ring: #89E900;
+  --ring: #4a8a00;
 
   --sidebar: #ffffff;
   --sidebar-foreground: #1a2a0a;
@@ -28,30 +28,31 @@
 }
 
 /* ============================================
-   TEMA OSCURO — Night #222222 + Kiwi #89E900
+   TEMA OSCURO — Dracula Theme
    ============================================ */
 :root.dark {
-  --background: #222222;
-  --foreground: #89E900;
-  --muted-foreground: #6aaa00;
-  --primary: #89E900;
-  --primary-foreground: #222222;
-  --input: #2e2e2e;
-  --ring: #89E900;
+  /* Dracula Theme — https://draculatheme.com */
+  --background: #282A36;
+  --foreground: #F8F8F2;
+  --muted-foreground: #6272A4;
+  --primary: #BD93F9;
+  --primary-foreground: #282A36;
+  --input: #44475A;
+  --ring: #BD93F9;
 
-  --sidebar: #1a1a1a;
-  --sidebar-foreground: #89E900;
-  --sidebar-border: #333333;
-  --sidebar-primary: #89E900;
-  --sidebar-primary-foreground: #222222;
-  --sidebar-accent: #2a2a2a;
-  --sidebar-accent-foreground: #89E900;
+  --sidebar: #1E1F29;
+  --sidebar-foreground: #F8F8F2;
+  --sidebar-border: #44475A;
+  --sidebar-primary: #BD93F9;
+  --sidebar-primary-foreground: #282A36;
+  --sidebar-accent: #44475A;
+  --sidebar-accent-foreground: #BD93F9;
 
-  --card: #2a2a2a;
-  --card-foreground: #e8ffe0;
-  --border: #333333;
-  --muted: #2e2e2e;
-  --destructive: #f87171;
+  --card: #44475A;
+  --card-foreground: #F8F8F2;
+  --border: #44475A;
+  --muted: #44475A;
+  --destructive: #FF5555;
 }
 
 body {

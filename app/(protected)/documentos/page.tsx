@@ -12,7 +12,7 @@ interface PageProps {
   searchParams: Promise<{ tipo?: string; solo_pendientes?: string; q?: string; pagina?: string }>;
 }
 
-const DOCUMENTOS_POR_PAGINA = 20;
+const DOCUMENTOS_POR_PAGINA = 18;
 
 export default async function DocumentosPage({ searchParams }: PageProps) {
   const supabase = await createClient();

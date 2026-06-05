@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { type LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
   FileText,
@@ -22,7 +23,7 @@ import { SidebarItem } from "@/components/layout/sidebar-item";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
-const ITEMS_NAVEGACION: { href: string; label: string; icon: React.ComponentType<{className?: string}>; adminOnly?: boolean }[] = [
+const ITEMS_NAVEGACION: { href: string; label: string; icon: LucideIcon; adminOnly?: boolean }[] = [
   { href: "/dashboard", label: "Panel de control", icon: LayoutDashboard },
   { href: "/documentos", label: "Documentos", icon: FileText },
   { href: "/documentos/nuevo", label: "Nuevo documento", icon: FilePlus },

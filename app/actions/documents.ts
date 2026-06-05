@@ -62,6 +62,13 @@ async function subirPdf(archivo: File, documentId: string, userId: string) {
   if (archivo.type !== "application/pdf") {
     return { error: "Solo se permiten archivos PDF" };
   }
+  // Verificar magic bytes — los primeros 5 bytes de un PDF real son "%PDF-"
+  const buffer = await archivo.arrayBuffer();
+  const bytes = new Uint8Array(buffer.slice(0, 5));
+  const magic = String.fromCharCode(...bytes);
+  if (!magic.startsWith("%PDF")) {
+    return { error: "El archivo no es un PDF válido" };
+  }
 
   const admin = getAdminClient();
   const extension = archivo.name.split(".").pop() ?? "pdf";

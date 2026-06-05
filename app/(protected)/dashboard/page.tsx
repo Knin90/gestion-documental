@@ -36,13 +36,12 @@ function TarjetaTotal({ titulo, valor, icono: Icono, descripcion }: TarjetaTotal
 
 function completarMeses(datos: { mes: string; total: number }[]) {
   const NOMBRES_MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-  const ahora = new Date();
+  const anio = new Date().getFullYear();
   const resultado: { mes: string; total: number }[] = [];
-  for (let i = 11; i >= 0; i--) {
-    const fecha = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
-    const clave = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}`;
+  for (let i = 0; i < 12; i++) {
+    const clave = `${anio}-${String(i + 1).padStart(2, "0")}`;
     const encontrado = datos.find((d) => d.mes === clave);
-    resultado.push({ mes: NOMBRES_MESES[fecha.getMonth()], total: encontrado?.total ?? 0 });
+    resultado.push({ mes: NOMBRES_MESES[i], total: encontrado?.total ?? 0 });
   }
   return resultado;
 }

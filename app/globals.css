@@ -94,10 +94,10 @@ body {
   --table-row-b: #eef8e8;
 }
 :root.dark {
-  --table-header: #44475A;
+  --table-header: #383A4A;
   --table-header-foreground: #BD93F9;
   --table-row-a: #282A36;
-  --table-row-b: #313342;
+  --table-row-b: #1E1F29;
 }
 .bg-table-header { background-color: var(--table-header); }
 .text-table-header { color: var(--table-header-foreground); }

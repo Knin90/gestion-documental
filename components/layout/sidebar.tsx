@@ -30,7 +30,7 @@ const ITEMS_NAVEGACION: { href: string; label: string; icon: LucideIcon; adminOn
   { href: "/buscar", label: "Buscar", icon: Search },
   { href: "/importar", label: "Importar", icon: Upload },
   { href: "/exportar", label: "Exportar", icon: Download },
-  { href: "/perfil#agregar", label: "Agregar usuario", icon: UserPlus, adminOnly: true },
+  { href: "/agregar-usuario", label: "Agregar usuario", icon: UserPlus, adminOnly: true },
 ] as const;
 
 interface SidebarContenidoProps {

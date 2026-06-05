@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -25,7 +26,6 @@ interface DashboardChartsProps {
   datosPorAnio: DatoAnio[];
 }
 
-// Colores según tema
 function useThemeColors() {
   const [isDark, setIsDark] = useState(false);
   useEffect(() => {
@@ -37,18 +37,16 @@ function useThemeColors() {
   }, []);
   return isDark
     ? {
-        barColor: "#BD93F9",       // Dracula purple
-        barColor2: "#8BE9FD",      // Dracula cyan
-        gridColor: "#44475A",      // Dracula selection
-        tickColor: "#6272A4",      // Dracula comment
-        tooltipBg: "#282A36",      // Dracula background
+        barColor: "#BD93F9",
+        gridColor: "#44475A",
+        tickColor: "#6272A4",
+        tooltipBg: "#282A36",
         tooltipBorder: "#44475A",
         tooltipColor: "#F8F8F2",
         cursorFill: "#44475A",
       }
     : {
         barColor: "#4a8a00",
-        barColor2: "#6aaa00",
         gridColor: "#cce8a0",
         tickColor: "#5a7a3a",
         tooltipBg: "#ffffff",
@@ -59,6 +57,15 @@ function useThemeColors() {
 }
 
 export function DashboardCharts({ datosPorMes, datosPorAnio }: DashboardChartsProps) {
+  const colors = useThemeColors();
+  const estiloTooltip = {
+    backgroundColor: colors.tooltipBg,
+    border: `1px solid ${colors.tooltipBorder}`,
+    borderRadius: "8px",
+    color: colors.tooltipColor,
+    fontSize: "12px",
+  };
+
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <div className="rounded-xl border bg-card p-6">
@@ -73,18 +80,8 @@ export function DashboardCharts({ datosPorMes, datosPorAnio }: DashboardChartsPr
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={datosPorMes} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={colors.gridColor} />
-              <XAxis
-                dataKey="mes"
-                tick={{ fontSize: 11, fill: colors.tickColor }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: colors.tickColor }}
-                axisLine={false}
-                tickLine={false}
-                allowDecimals={false}
-              />
+              <XAxis dataKey="mes" tick={{ fontSize: 11, fill: colors.tickColor }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: colors.tickColor }} axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip contentStyle={estiloTooltip} cursor={{ fill: colors.cursorFill }} />
               <Bar dataKey="total" fill={colors.barColor} radius={[4, 4, 0, 0]} name="Documentos" />
             </BarChart>
@@ -104,18 +101,8 @@ export function DashboardCharts({ datosPorMes, datosPorAnio }: DashboardChartsPr
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={datosPorAnio} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={colors.gridColor} />
-              <XAxis
-                dataKey="anio"
-                tick={{ fontSize: 11, fill: colors.tickColor }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: colors.tickColor }}
-                axisLine={false}
-                tickLine={false}
-                allowDecimals={false}
-              />
+              <XAxis dataKey="anio" tick={{ fontSize: 11, fill: colors.tickColor }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: colors.tickColor }} axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip contentStyle={estiloTooltip} cursor={{ fill: colors.cursorFill }} />
               <Bar dataKey="total" fill={colors.barColor} radius={[4, 4, 0, 0]} name="Documentos" />
             </BarChart>

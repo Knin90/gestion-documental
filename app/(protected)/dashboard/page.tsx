@@ -121,12 +121,21 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           {orgName && (
-            <p className="text-xs font-semibold uppercase tracking-widest mb-1"
-              style={{ color: "var(--sidebar-primary)" }}>
-              {orgName}
-            </p>
+            <div className="mb-2 flex items-center gap-3">
+              <h2
+                className="font-black uppercase tracking-widest leading-none"
+                style={{
+                  fontSize: "clamp(1.5rem, 3vw, 2.5rem)",
+                  color: "var(--sidebar-primary)",
+                  textShadow: "0 2px 12px color-mix(in srgb, var(--sidebar-primary) 30%, transparent)",
+                  letterSpacing: "0.15em",
+                }}
+              >
+                {orgName}
+              </h2>
+            </div>
           )}
-          <h1 className="text-2xl font-bold tracking-tight">Panel de control</h1>
+          <h1 className="text-lg font-semibold tracking-tight text-muted-foreground">Panel de control</h1>
           <p className="text-sm text-muted-foreground">
             Estadísticas de documentos {etiquetaTipo.toLowerCase()}
           </p>

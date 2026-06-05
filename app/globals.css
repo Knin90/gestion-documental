@@ -93,10 +93,10 @@ body {
   --table-row-b: #eef8e8;
 }
 :root.dark {
-  --table-header: #2a3a1a;
-  --table-header-foreground: #89E900;
-  --table-row-a: #222222;
-  --table-row-b: #2a2a1a;
+  --table-header: #1a1f2e;
+  --table-header-foreground: #4fc3f7;
+  --table-row-a: #0d0d0d;
+  --table-row-b: #141414;
 }
 .bg-table-header { background-color: var(--table-header); }
 .text-table-header { color: var(--table-header-foreground); }
@@ -115,4 +115,12 @@ body {
 .neu-card:hover {
   box-shadow: 12px 12px 20px rgba(0,0,0,0.15),
               -12px -12px 20px rgba(255,255,255,0.8);
+}
+:root.dark .neu-card {
+  box-shadow: 4px 4px 12px rgba(0,0,0,0.6),
+              -2px -2px 8px rgba(79,195,247,0.04);
+}
+:root.dark .neu-card:hover {
+  box-shadow: 6px 6px 16px rgba(0,0,0,0.7),
+              -2px -2px 10px rgba(79,195,247,0.06);
 }

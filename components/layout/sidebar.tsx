@@ -30,7 +30,6 @@ const ITEMS_NAVEGACION: { href: string; label: string; icon: LucideIcon; adminOn
   { href: "/buscar", label: "Buscar", icon: Search },
   { href: "/importar", label: "Importar", icon: Upload },
   { href: "/exportar", label: "Exportar", icon: Download },
-  { href: "/agregar-usuario", label: "Agregar usuario", icon: UserPlus, adminOnly: true },
 ] as const;
 
 interface SidebarContenidoProps {
@@ -91,6 +90,7 @@ function SidebarContenido({ onNavigate }: SidebarContenidoProps) {
 
       <div className="border-t border-sidebar-border px-3 py-4 space-y-1">
         <SidebarItem href="/perfil" label="Mi perfil" icon={User} onNavigate={onNavigate} />
+        {isAdmin && <SidebarItem href="/agregar-usuario" label="Agregar usuario" icon={UserPlus} onNavigate={onNavigate} />}
 <NotificationBell />
         <button
           onClick={handleCerrarSesion}

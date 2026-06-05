@@ -31,18 +31,49 @@ export function ThemeToggle() {
     }
   }
 
-  if (!mounted) return <div className="h-8 w-8" />;
+  if (!mounted) return <div className="h-8 w-16" />;
 
   return (
-    <button
+    <div
+      className="flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-sidebar-accent transition-colors cursor-pointer"
       onClick={toggleTheme}
-      className="rounded-lg p-1.5 hover:bg-sidebar-accent transition-colors"
+      role="switch"
+      aria-checked={isDark}
       aria-label={isDark ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
     >
       {isDark
-        ? <Sun className="h-4 w-4 text-sidebar-foreground" />
-        : <Moon className="h-4 w-4 text-sidebar-foreground" />
+        ? <Moon className="h-4 w-4 text-sidebar-foreground" />
+        : <Sun className="h-4 w-4 text-sidebar-foreground" />
       }
-    </button>
+      <span className="text-xs text-sidebar-foreground flex-1">
+        {isDark ? "Oscuro" : "Claro"}
+      </span>
+
+      {/* Toggle switch animado */}
+      <div style={{ position: "relative", width: "36px", height: "20px", flexShrink: 0 }}>
+        {/* Track */}
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: "9999px",
+          backgroundColor: isDark ? "var(--sidebar-primary)" : "#929292",
+          opacity: isDark ? 1 : 0.35,
+          transition: "background 250ms, opacity 250ms",
+        }} />
+        {/* Knob */}
+        <div style={{
+          position: "absolute",
+          width: "16px",
+          height: "16px",
+          left: "2px",
+          top: "2px",
+          backgroundColor: "white",
+          borderRadius: "9999px",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+          transform: isDark ? "translateX(16px)" : "translateX(0)",
+          transition: "transform 250ms cubic-bezier(0.22, 1, 0.36, 1)",
+        }} />
+      </div>
+    </div>
   );
 }

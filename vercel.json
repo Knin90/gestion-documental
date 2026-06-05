@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/check-storage",
+      "schedule": "0 8 * * *"
+    }
+  ]
+}

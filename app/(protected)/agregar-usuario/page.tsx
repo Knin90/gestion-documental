@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { Eye, EyeOff, Copy, Users, UserPlus, Trash2, Crown, Shield } from "lucide-react";
+import { Eye, EyeOff, Copy, Users, UserPlus, Trash2, Crown } from "lucide-react";
 import { invitarUsuario, eliminarUsuario, cambiarPermisoUsuario, cambiarRolUsuario, transferirPropiedad } from "@/app/actions/invite";
 
 interface UsuarioTabla {
@@ -57,17 +57,17 @@ export default function AgregarUsuarioPage() {
       .select("email, role, is_owner")
       .eq("org_id", perfil.org_id);
 
-    const emailsRegistrados = new Map(registrados?.map((p) => [p.email, { role: p.role, is_owner: p.is_owner }]) ?? []);
+    const emailsMap = new Map(registrados?.map((p) => [p.email, { role: p.role, is_owner: p.is_owner }]) ?? []);
 
     setUsuarios((permitidos ?? []).map((u) => {
-      const reg = emailsRegistrados.get(u.email);
+      const reg = emailsMap.get(u.email);
       return {
         email: u.email,
         full_name: u.full_name || "—",
         access_code: u.access_code,
         is_active: u.is_active,
         created_at: u.created_at,
-        registrado: emailsRegistrados.has(u.email),
+        registrado: emailsMap.has(u.email),
         permission: u.permission || "editor",
         role: reg?.role || u.role || "user",
         is_owner: reg?.is_owner ?? false,
@@ -104,13 +104,13 @@ export default function AgregarUsuarioPage() {
   async function handleCambiarRol(emailUsuario: string, rol: "admin" | "user") {
     setCambiandoRol(emailUsuario);
     const res = await cambiarRolUsuario(emailUsuario, rol);
-    if (res.success) { toast.success(`Rol cambiado a ${rol === "admin" ? "Admin" : "Usuario"}`); await cargarDatos(); }
+    if (res.success) { toast.success("Rol actualizado"); await cargarDatos(); }
     else { toast.error(res.error ?? "Error"); }
     setCambiandoRol(null);
   }
 
   async function handleTransferir(emailNuevo: string) {
-    if (!confirm(`¿Transferir la propiedad a ${emailNuevo}? Perderás tu cargo de propietario.`)) return;
+    if (!confirm("¿Transferir la propiedad a " + emailNuevo + "? Perderás tu cargo de propietario.")) return;
     setTransfiriendo(true);
     const res = await transferirPropiedad(emailNuevo);
     if (res.success) { toast.success("Propiedad transferida"); await cargarDatos(); }
@@ -133,9 +133,7 @@ export default function AgregarUsuarioPage() {
     return (
       <div className="p-6 max-w-4xl space-y-6 animate-pulse">
         <div className="h-8 w-48 rounded-lg bg-muted" />
-        <div className="rounded-xl border bg-card p-6 space-y-4">
-          <div className="h-10 w-full rounded-lg bg-muted" />
-        </div>
+        <div className="rounded-xl border bg-card p-6"><div className="h-10 w-full rounded-lg bg-muted" /></div>
       </div>
     );
   }
@@ -147,7 +145,6 @@ export default function AgregarUsuarioPage() {
         <p className="text-sm text-muted-foreground">Gestiona los usuarios de tu organización</p>
       </div>
 
-      {/* Formulario agregar */}
       <div className="neu-card rounded-xl bg-card p-6 space-y-4">
         <h2 className="text-sm font-semibold flex items-center gap-2"><UserPlus className="h-4 w-4" />Nuevo usuario</h2>
         <form onSubmit={handleInvitar} className="space-y-3">
@@ -187,7 +184,6 @@ export default function AgregarUsuarioPage() {
             {invitando ? "Agregando..." : "Agregar y generar código"}
           </button>
         </form>
-
         {codigoGenerado && (
           <div className="rounded-lg border border-green-200 bg-green-50 p-4 space-y-2">
             <p className="text-sm font-medium text-green-800">Usuario agregado</p>
@@ -204,7 +200,6 @@ export default function AgregarUsuarioPage() {
         )}
       </div>
 
-      {/* Tabla usuarios */}
       {usuarios.length > 0 && (
         <div className="neu-card rounded-xl bg-card p-6 space-y-4">
           <h2 className="text-sm font-semibold flex items-center gap-2"><Users className="h-4 w-4" />Usuarios ({usuarios.length})</h2>
@@ -225,13 +220,13 @@ export default function AgregarUsuarioPage() {
                   <tr key={u.email}>
                     <td className="px-3 py-2 font-medium">
                       <div className="flex items-center gap-1.5">
-                        {u.is_owner && <Crown className="h-3.5 w-3.5 text-yellow-500" title="Propietario" />}
+                        {u.is_owner && <Crown className="h-3.5 w-3.5 text-yellow-500" />}
                         {u.full_name}
                       </div>
                     </td>
                     <td className="px-3 py-2 text-muted-foreground text-xs">{u.email}</td>
                     <td className="px-3 py-2">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${u.registrado ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}>
+                      <span className={"inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium " + (u.registrado ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800")}>
                         {u.registrado ? "Registrado" : "Pendiente"}
                       </span>
                     </td>
@@ -245,7 +240,7 @@ export default function AgregarUsuarioPage() {
                       ) : (
                         <select value={u.role} disabled={cambiandoRol === u.email || !u.registrado}
                           onChange={(e) => handleCambiarRol(u.email, e.target.value as "admin" | "user")}
-                          className="rounded-lg border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-sidebar-primary disabled:opacity-50 cursor-pointer">
+                          className="rounded-lg border bg-background px-2 py-1 text-xs focus:outline-none disabled:opacity-50 cursor-pointer">
                           <option value="user">Usuario</option>
                           <option value="admin">Admin</option>
                         </select>
@@ -255,7 +250,7 @@ export default function AgregarUsuarioPage() {
                       {u.email !== myEmail ? (
                         <select value={u.permission} disabled={cambiandoPermiso === u.email}
                           onChange={(e) => handleCambiarPermiso(u.email, e.target.value as "editor" | "viewer")}
-                          className="rounded-lg border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-sidebar-primary disabled:opacity-50 cursor-pointer">
+                          className="rounded-lg border bg-background px-2 py-1 text-xs focus:outline-none disabled:opacity-50 cursor-pointer">
                           <option value="editor">Editor</option>
                           <option value="viewer">Solo lectura</option>
                         </select>
@@ -265,18 +260,15 @@ export default function AgregarUsuarioPage() {
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-1">
-                        {/* Transferir propiedad — solo owner puede ver esto */}
                         {isOwner && u.email !== myEmail && u.registrado && u.role === "admin" && (
                           <button onClick={() => handleTransferir(u.email)} disabled={transfiriendo}
-                            className="rounded p-1 text-yellow-600 hover:bg-yellow-50 transition-colors disabled:opacity-50"
-                            title="Transferir propiedad">
+                            className="rounded p-1 text-yellow-600 hover:bg-yellow-50 disabled:opacity-50" title="Transferir propiedad">
                             <Crown className="h-3.5 w-3.5" />
                           </button>
                         )}
-                        {/* Eliminar — no puede eliminarse a sí mismo ni al owner */}
                         {u.email !== myEmail && !u.is_owner && (
                           <button onClick={() => handleEliminar(u.email)} disabled={eliminando === u.email}
-                            className="rounded p-1 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50">
+                            className="rounded p-1 text-red-600 hover:bg-red-50 disabled:opacity-50">
                             {eliminando === u.email ? "..." : <Trash2 className="h-3.5 w-3.5" />}
                           </button>
                         )}

@@ -14,7 +14,6 @@ import {
   UserPlus,
   LogOut,
   X,
-  ChevronRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -69,8 +68,8 @@ function SidebarContenido({ onNavigate }: SidebarContenidoProps) {
           onClick={onNavigate}
           className="flex items-center gap-2.5 font-semibold"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-            <ChevronRight className="h-4 w-4" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground overflow-hidden p-1">
+            <img src="/logo.svg" alt="Logo" className="h-full w-full brightness-0 invert" />
           </div>
           <span className="text-sm">Gestión Documental</span>
         </Link>

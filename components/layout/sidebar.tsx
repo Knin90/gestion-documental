@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard,
@@ -10,6 +10,7 @@ import {
   Upload,
   Download,
   User,
+  UserPlus,
   LogOut,
   X,
   ChevronRight,
@@ -21,13 +22,14 @@ import { SidebarItem } from "@/components/layout/sidebar-item";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
-const ITEMS_NAVEGACION = [
+const ITEMS_NAVEGACION: { href: string; label: string; icon: React.ComponentType<{className?: string}>; adminOnly?: boolean }[] = [
   { href: "/dashboard", label: "Panel de control", icon: LayoutDashboard },
   { href: "/documentos", label: "Documentos", icon: FileText },
   { href: "/documentos/nuevo", label: "Nuevo documento", icon: FilePlus },
   { href: "/buscar", label: "Buscar", icon: Search },
   { href: "/importar", label: "Importar", icon: Upload },
   { href: "/exportar", label: "Exportar", icon: Download },
+  { href: "/perfil#agregar", label: "Agregar usuario", icon: UserPlus, adminOnly: true },
 ] as const;
 
 interface SidebarContenidoProps {
@@ -37,6 +39,16 @@ interface SidebarContenidoProps {
 function SidebarContenido({ onNavigate }: SidebarContenidoProps) {
   const router = useRouter();
   const supabase = createClient();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase.from("profiles").select("role").eq("id", user.id).single().then(({ data }) => {
+        setIsAdmin(data?.role === "admin");
+      });
+    });
+  }, []);
 
   async function handleCerrarSesion() {
     const { error } = await supabase.auth.signOut();
@@ -65,7 +77,7 @@ function SidebarContenido({ onNavigate }: SidebarContenidoProps) {
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-        {ITEMS_NAVEGACION.map((item) => (
+        {ITEMS_NAVEGACION.filter(item => !item.adminOnly || isAdmin).map((item) => (
           <SidebarItem
             key={item.href}
             href={item.href}

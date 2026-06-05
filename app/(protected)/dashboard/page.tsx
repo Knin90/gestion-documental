@@ -91,6 +91,15 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   if (!profile?.org_id) redirect("/login");
   const orgId = profile.org_id;
 
+  // Obtener nombre de la organización
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("name")
+    .eq("id", orgId)
+    .single();
+
+  const orgName = org?.name ?? "";
+
   const params = await searchParams;
   const tipo: TipoDocumento = params.tipo === "enviado" ? "enviado" : "recibido";
 
@@ -111,6 +120,12 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     <div className="p-6 space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
+          {orgName && (
+            <p className="text-xs font-semibold uppercase tracking-widest mb-1"
+              style={{ color: "var(--sidebar-primary)" }}>
+              {orgName}
+            </p>
+          )}
           <h1 className="text-2xl font-bold tracking-tight">Panel de control</h1>
           <p className="text-sm text-muted-foreground">
             Estadísticas de documentos {etiquetaTipo.toLowerCase()}

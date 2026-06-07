@@ -37,6 +37,13 @@ export const metadata: Metadata = {
     description: "Sistema interno de gestión documental.",
     images: ["https://gestion.kunix.dev/login-bg.webp"],
   },
+  icons: {
+  icon: [
+    { url: "/favicon.ico", sizes: "any" },
+    { url: "/logo.png", type: "image/png" },
+  ],
+  apple: "/apple-touch-icon.png",
+},
 };
 
 export default function RootLayout({

@@ -14,6 +14,8 @@ import {
   UserPlus,
   LogOut,
   X,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -35,9 +37,10 @@ const ITEMS_NAVEGACION: { href: string; label: string; icon: LucideIcon; adminOn
 interface SidebarContenidoProps {
   onNavigate?: () => void;
   collapsed?: boolean;
+  onToggle?: () => void;
 }
 
-function SidebarContenido({ onNavigate, collapsed }: SidebarContenidoProps) {
+function SidebarContenido({ onNavigate, collapsed, onToggle }: SidebarContenidoProps) {
   const router = useRouter();
   const supabase = createClient();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -64,23 +67,46 @@ function SidebarContenido({ onNavigate, collapsed }: SidebarContenidoProps) {
   return (
     <div className="flex h-full w-full flex-col bg-sidebar text-sidebar-foreground overflow-hidden">
       <div
-        style={{ justifyContent: collapsed ? "center" : undefined }}
+        style={{ justifyContent: collapsed ? "center" : "space-between" }}
         className="flex h-16 items-center border-b border-sidebar-border px-4"
       >
-        <Link
-          href="/dashboard"
-          prefetch={false}
-          onClick={onNavigate}
-          className="flex items-center gap-2.5 font-semibold overflow-hidden"
+        {!collapsed && (
+          <Link
+            href="/dashboard"
+            prefetch={false}
+            onClick={onNavigate}
+            className="flex items-center gap-2.5 font-semibold overflow-hidden"
+          >
+            <div className="flex h-8 w-8 items-center justify-center overflow-hidden shrink-0">
+              <img src="/logo-v2.png" alt="Logo" className="h-full w-full object-contain" />
+            </div>
+            <span className="text-sm truncate">Gestión Documental</span>
+          </Link>
+        )}
+        <button
+          onClick={onToggle}
+          title={collapsed ? "Expandir sidebar" : "Colapsar sidebar"}
+          className="rounded-lg p-1.5 hover:bg-sidebar-accent transition-colors shrink-0"
         >
-          <div className="flex h-8 w-8 items-center justify-center overflow-hidden shrink-0">
-            <img src="/logo-v2.png" alt="Logo" className="h-full w-full object-contain" />
-          </div>
-          {!collapsed && <span className="text-sm truncate">Gestión Documental</span>}
-        </Link>
+          {collapsed
+            ? <PanelLeftOpen className="h-4 w-4" />
+            : <PanelLeftClose className="h-4 w-4" />
+          }
+        </button>
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+        {collapsed && (
+          <Link
+            href="/dashboard"
+            title="Inicio"
+            className="flex justify-center mb-2"
+          >
+            <div className="flex h-8 w-8 items-center justify-center overflow-hidden">
+              <img src="/logo-v2.png" alt="Logo" className="h-full w-full object-contain" />
+            </div>
+          </Link>
+        )}
         {ITEMS_NAVEGACION.filter(item => !item.adminOnly || isAdmin).map((item) => (
           <SidebarItem
             key={item.href}
@@ -119,17 +145,18 @@ function SidebarContenido({ onNavigate, collapsed }: SidebarContenidoProps) {
   );
 }
 
-interface SidebarDesktopProps {
-  collapsed?: boolean;
-}
+export function SidebarDesktop() {
+  const [collapsed, setCollapsed] = useState(false);
 
-export function SidebarDesktop({ collapsed }: SidebarDesktopProps) {
   return (
     <aside
       style={{ width: collapsed ? "64px" : "256px" }}
       className="hidden shrink-0 border-r border-sidebar-border lg:flex transition-all duration-300"
     >
-      <SidebarContenido collapsed={collapsed} />
+      <SidebarContenido
+        collapsed={collapsed}
+        onToggle={() => setCollapsed(v => !v)}
+      />
     </aside>
   );
 }

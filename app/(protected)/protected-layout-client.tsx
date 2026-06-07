@@ -9,21 +9,16 @@ interface LayoutProtegidoProps {
 
 export default function ProtectedLayoutClient({ children }: LayoutProtegidoProps) {
   const [menuAbierto, setMenuAbierto] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <SidebarDesktop collapsed={collapsed} />
+      <SidebarDesktop />
       <SidebarMobile
         estaAbierto={menuAbierto}
         onCerrar={() => setMenuAbierto(false)}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header
-          onAbrirMenu={() => setMenuAbierto(true)}
-          onToggleSidebar={() => setCollapsed(v => !v)}
-          sidebarVisible={!collapsed}
-        />
+        <Header onAbrirMenu={() => setMenuAbierto(true)} />
         <main className="flex-1 overflow-y-auto">
           {children}
         </main>

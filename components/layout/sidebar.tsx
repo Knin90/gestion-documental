@@ -68,7 +68,7 @@ function SidebarContenido({ onNavigate }: SidebarContenidoProps) {
           onClick={onNavigate}
           className="flex items-center gap-2.5 font-semibold"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground overflow-hidden p-1">
+          <div className="flex h-8 w-8 items-center justify-center overflow-hidden">
             <img src="/logo.png" alt="Logo" className="h-full w-full object-contain" />
           </div>
           <span className="text-sm">Gestión Documental</span>

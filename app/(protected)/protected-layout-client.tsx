@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { SidebarDesktop, SidebarMobile } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
@@ -10,16 +9,21 @@ interface LayoutProtegidoProps {
 
 export default function ProtectedLayoutClient({ children }: LayoutProtegidoProps) {
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <SidebarDesktop />
+      {sidebarVisible && <SidebarDesktop />}
       <SidebarMobile
         estaAbierto={menuAbierto}
         onCerrar={() => setMenuAbierto(false)}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header onAbrirMenu={() => setMenuAbierto(true)} />
+        <Header
+          onAbrirMenu={() => setMenuAbierto(true)}
+          onToggleSidebar={() => setSidebarVisible(v => !v)}
+          sidebarVisible={sidebarVisible}
+        />
         <main className="flex-1 overflow-y-auto">
           {children}
         </main>

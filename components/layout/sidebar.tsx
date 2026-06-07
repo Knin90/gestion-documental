@@ -62,18 +62,21 @@ function SidebarContenido({ onNavigate, collapsed }: SidebarContenidoProps) {
   }
 
   return (
-    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      <div className={cn("flex h-16 items-center border-b border-sidebar-border px-4", collapsed && "justify-center px-2")}>
+    <div className="flex h-full w-full flex-col bg-sidebar text-sidebar-foreground overflow-hidden">
+      <div
+        style={{ justifyContent: collapsed ? "center" : undefined }}
+        className="flex h-16 items-center border-b border-sidebar-border px-4"
+      >
         <Link
           href="/dashboard"
           prefetch={false}
           onClick={onNavigate}
-          className="flex items-center gap-2.5 font-semibold"
+          className="flex items-center gap-2.5 font-semibold overflow-hidden"
         >
           <div className="flex h-8 w-8 items-center justify-center overflow-hidden shrink-0">
             <img src="/logo-v2.png" alt="Logo" className="h-full w-full object-contain" />
           </div>
-          {!collapsed && <span className="text-sm">Gestión Documental</span>}
+          {!collapsed && <span className="text-sm truncate">Gestión Documental</span>}
         </Link>
       </div>
 
@@ -92,15 +95,15 @@ function SidebarContenido({ onNavigate, collapsed }: SidebarContenidoProps) {
 
       <div className="border-t border-sidebar-border px-3 py-4 space-y-1">
         <SidebarItem href="/perfil" label="Mi perfil" icon={User} onNavigate={onNavigate} collapsed={collapsed} />
-        {isAdmin && <SidebarItem href="/agregar-usuario" label="Agregar usuario" icon={UserPlus} onNavigate={onNavigate} collapsed={collapsed} />}
+        {isAdmin && (
+          <SidebarItem href="/agregar-usuario" label="Agregar usuario" icon={UserPlus} onNavigate={onNavigate} collapsed={collapsed} />
+        )}
         {!collapsed && <NotificationBell />}
         <button
           onClick={handleCerrarSesion}
           title={collapsed ? "Cerrar sesión" : undefined}
-          className={cn(
-            "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            collapsed && "justify-center px-2"
-          )}
+          style={{ justifyContent: collapsed ? "center" : undefined }}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           {!collapsed && <span>Cerrar sesión</span>}
@@ -122,7 +125,10 @@ interface SidebarDesktopProps {
 
 export function SidebarDesktop({ collapsed }: SidebarDesktopProps) {
   return (
-    <aside className={cn("hidden shrink-0 border-r border-sidebar-border lg:flex transition-all duration-300", collapsed ? "w-16" : "w-64")}>
+    <aside
+      style={{ width: collapsed ? "64px" : "256px" }}
+      className="hidden shrink-0 border-r border-sidebar-border lg:flex transition-all duration-300"
+    >
       <SidebarContenido collapsed={collapsed} />
     </aside>
   );

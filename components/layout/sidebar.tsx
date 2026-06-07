@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { SidebarItem } from "@/components/layout/sidebar-item";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { cn } from "@/lib/utils";
 
 const ITEMS_NAVEGACION: { href: string; label: string; icon: LucideIcon; adminOnly?: boolean }[] = [
   { href: "/dashboard", label: "Panel de control", icon: LayoutDashboard },
@@ -33,9 +34,10 @@ const ITEMS_NAVEGACION: { href: string; label: string; icon: LucideIcon; adminOn
 
 interface SidebarContenidoProps {
   onNavigate?: () => void;
+  collapsed?: boolean;
 }
 
-function SidebarContenido({ onNavigate }: SidebarContenidoProps) {
+function SidebarContenido({ onNavigate, collapsed }: SidebarContenidoProps) {
   const router = useRouter();
   const supabase = createClient();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -61,17 +63,17 @@ function SidebarContenido({ onNavigate }: SidebarContenidoProps) {
 
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      <div className="flex h-16 items-center border-b border-sidebar-border px-4">
+      <div className={cn("flex h-16 items-center border-b border-sidebar-border px-4", collapsed && "justify-center px-2")}>
         <Link
           href="/dashboard"
           prefetch={false}
           onClick={onNavigate}
           className="flex items-center gap-2.5 font-semibold"
         >
-          <div className="flex h-8 w-8 items-center justify-center overflow-hidden">
+          <div className="flex h-8 w-8 items-center justify-center overflow-hidden shrink-0">
             <img src="/logo-v2.png" alt="Logo" className="h-full w-full object-contain" />
           </div>
-          <span className="text-sm">Gestión Documental</span>
+          {!collapsed && <span className="text-sm">Gestión Documental</span>}
         </Link>
       </div>
 
@@ -83,34 +85,45 @@ function SidebarContenido({ onNavigate }: SidebarContenidoProps) {
             label={item.label}
             icon={item.icon}
             onNavigate={onNavigate}
+            collapsed={collapsed}
           />
         ))}
       </nav>
 
       <div className="border-t border-sidebar-border px-3 py-4 space-y-1">
-        <SidebarItem href="/perfil" label="Mi perfil" icon={User} onNavigate={onNavigate} />
-        {isAdmin && <SidebarItem href="/agregar-usuario" label="Agregar usuario" icon={UserPlus} onNavigate={onNavigate} />}
-<NotificationBell />
+        <SidebarItem href="/perfil" label="Mi perfil" icon={User} onNavigate={onNavigate} collapsed={collapsed} />
+        {isAdmin && <SidebarItem href="/agregar-usuario" label="Agregar usuario" icon={UserPlus} onNavigate={onNavigate} collapsed={collapsed} />}
+        {!collapsed && <NotificationBell />}
         <button
           onClick={handleCerrarSesion}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          title={collapsed ? "Cerrar sesión" : undefined}
+          className={cn(
+            "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            collapsed && "justify-center px-2"
+          )}
         >
           <LogOut className="h-4 w-4 shrink-0" />
-          <span>Cerrar sesión</span>
+          {!collapsed && <span>Cerrar sesión</span>}
         </button>
-        <div className="flex items-center justify-between px-3 pt-2">
-          <span className="text-xs text-muted-foreground">Tema</span>
-          <ThemeToggle />
-        </div>
+        {!collapsed && (
+          <div className="flex items-center justify-between px-3 pt-2">
+            <span className="text-xs text-muted-foreground">Tema</span>
+            <ThemeToggle />
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-export function SidebarDesktop() {
+interface SidebarDesktopProps {
+  collapsed?: boolean;
+}
+
+export function SidebarDesktop({ collapsed }: SidebarDesktopProps) {
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-sidebar-border lg:flex">
-      <SidebarContenido />
+    <aside className={cn("hidden shrink-0 border-r border-sidebar-border lg:flex transition-all duration-300", collapsed ? "w-16" : "w-64")}>
+      <SidebarContenido collapsed={collapsed} />
     </aside>
   );
 }

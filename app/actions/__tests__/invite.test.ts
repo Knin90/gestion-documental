@@ -301,6 +301,28 @@ describe("eliminarUsuario", () => {
     expect(deleteAuthMock).toHaveBeenCalledWith("u99");
   });
 
+
+  it("retorna error si falla deleteUser en auth", async () => {
+    mockAdmin();
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        delete: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      }),
+      auth: {
+        admin: {
+          listUsers: vi.fn().mockResolvedValue({
+            data: { users: [{ id: "u99", email: "otro@test.com" }] },
+          }),
+          deleteUser: vi.fn().mockResolvedValue({ error: { message: "auth error" } }),
+        },
+      },
+    });
+    const res = await eliminarUsuario("otro@test.com");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("Error al eliminar usuario");
+  });
+
   it("elimina usuario no registrado (solo en allowed_emails)", async () => {
     mockAdmin();
     const deleteMock = vi.fn().mockReturnThis();

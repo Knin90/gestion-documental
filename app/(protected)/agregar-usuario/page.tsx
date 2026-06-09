@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { Eye, EyeOff, Copy, Users, UserPlus, Trash2, Crown } from "lucide-react";
-import { invitarUsuario, eliminarUsuario, cambiarPermisoUsuario, cambiarRolUsuario, transferirPropiedad } from "@/app/actions/invite";
+import { Eye, EyeOff, Copy, Users, UserPlus, Trash2, Crown, FileSpreadsheet } from "lucide-react";
+import { invitarUsuario, eliminarUsuario, cambiarPermisoUsuario, cambiarRolUsuario, transferirPropiedad, cambiarPermisoExportar } from "@/app/actions/invite";
 
 interface UsuarioTabla {
   email: string;
@@ -16,6 +16,7 @@ interface UsuarioTabla {
   permission: string;
   role: string;
   is_owner: boolean;
+  can_export: boolean;
 }
 
 export default function AgregarUsuarioPage() {
@@ -33,6 +34,7 @@ export default function AgregarUsuarioPage() {
   const [eliminando, setEliminando] = useState<string | null>(null);
   const [cambiandoPermiso, setCambiandoPermiso] = useState<string | null>(null);
   const [cambiandoRol, setCambiandoRol] = useState<string | null>(null);
+  const [cambiandoExportar, setCambiandoExportar] = useState<string | null>(null);
   const [transfiriendo, setTransfiriendo] = useState(false);
   const [cargando, setCargando] = useState(true);
 
@@ -54,10 +56,10 @@ export default function AgregarUsuarioPage() {
 
     const { data: registrados } = await supabase
       .from("profiles")
-      .select("email, role, is_owner")
+      .select("email, role, is_owner, can_export")
       .eq("org_id", perfil.org_id);
 
-    const emailsMap = new Map(registrados?.map((p) => [p.email, { role: p.role, is_owner: p.is_owner }]) ?? []);
+    const emailsMap = new Map(registrados?.map((p) => [p.email, { role: p.role, is_owner: p.is_owner, can_export: p.can_export }]) ?? []);
 
     setUsuarios((permitidos ?? []).map((u) => {
       const reg = emailsMap.get(u.email);
@@ -71,6 +73,7 @@ export default function AgregarUsuarioPage() {
         permission: u.permission || "editor",
         role: reg?.role || u.role || "user",
         is_owner: reg?.is_owner ?? false,
+        can_export: reg?.can_export ?? false,
       };
     }));
     setCargando(false);
@@ -107,6 +110,16 @@ export default function AgregarUsuarioPage() {
     if (res.success) { toast.success("Rol actualizado"); await cargarDatos(); }
     else { toast.error(res.error ?? "Error"); }
     setCambiandoRol(null);
+  }
+
+  async function handleToggleExportar(emailUsuario: string, valor: boolean) {
+    setCambiandoExportar(emailUsuario);
+    const res = await cambiarPermisoExportar(emailUsuario, valor);
+    if (res.success) {
+      toast.success(valor ? "Exportación habilitada" : "Exportación deshabilitada");
+      await cargarDatos();
+    } else { toast.error(res.error ?? "Error"); }
+    setCambiandoExportar(null);
   }
 
   async function handleTransferir(emailNuevo: string) {
@@ -212,6 +225,7 @@ export default function AgregarUsuarioPage() {
                   <th className="px-3 py-2 text-left font-medium text-muted-foreground">Estado</th>
                   <th className="px-3 py-2 text-left font-medium text-muted-foreground">Rol</th>
                   <th className="px-3 py-2 text-left font-medium text-muted-foreground">Permiso</th>
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">Exportar</th>
                   <th className="px-3 py-2 text-left font-medium text-muted-foreground">Acciones</th>
                 </tr>
               </thead>
@@ -254,6 +268,24 @@ export default function AgregarUsuarioPage() {
                           <option value="editor">Editor</option>
                           <option value="viewer">Solo lectura</option>
                         </select>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      {u.role === "admin" || u.is_owner ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                          <FileSpreadsheet className="h-3.5 w-3.5" />Siempre
+                        </span>
+                      ) : u.email !== myEmail && u.registrado ? (
+                        <button
+                          onClick={() => handleToggleExportar(u.email, !u.can_export)}
+                          disabled={cambiandoExportar === u.email}
+                          title={u.can_export ? "Deshabilitar exportación" : "Habilitar exportación"}
+                          className={"relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 " + (u.can_export ? "bg-sidebar-primary" : "bg-muted")}
+                        >
+                          <span className={"inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform " + (u.can_export ? "translate-x-4" : "translate-x-1")} />
+                        </button>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
                       )}

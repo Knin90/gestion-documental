@@ -201,3 +201,22 @@ export async function transferirPropiedad(emailNuevoOwner: string): Promise<Acti
   revalidatePath("/agregar-usuario");
   return { success: true };
 }
+
+export async function cambiarPermisoExportar(email: string, can_export: boolean): Promise<ActionResult> {
+  const resultado = await verificarAdmin();
+  if (!resultado) return { success: false, error: "No tienes permisos" };
+  const { orgId } = resultado;
+
+  const admin = getAdminClient();
+
+  const { error } = await admin
+    .from("profiles")
+    .update({ can_export })
+    .eq("email", email)
+    .eq("org_id", orgId);
+
+  if (error) return { success: false, error: "Error al actualizar permiso de exportación" };
+
+  revalidatePath("/agregar-usuario");
+  return { success: true };
+}

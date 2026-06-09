@@ -426,3 +426,60 @@ describe("cambiarPermisoUsuario - casos adicionales", () => {
     expect(res.error).toBe("Error al actualizar permisos");
   });
 });
+
+// ─── Idempotencia ─────────────────────────────────────────────────────────────
+
+describe("idempotencia", () => {
+  it("eliminarUsuario dos veces no lanza error inesperado", async () => {
+    mockAdmin();
+    const deleteMock = vi.fn().mockReturnThis();
+    const eqMock = vi.fn().mockResolvedValue({ error: null });
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        delete: deleteMock,
+        eq: eqMock,
+      }),
+      auth: {
+        admin: {
+          listUsers: vi.fn().mockResolvedValue({ data: { users: [] } }),
+          deleteUser: vi.fn(),
+        },
+      },
+    });
+    const res1 = await eliminarUsuario("otro@test.com");
+    const res2 = await eliminarUsuario("otro@test.com");
+    expect(res1.success).toBe(true);
+    expect(res2.success).toBe(true);
+  });
+
+  it("transferirPropiedad ejecutada dos veces retorna error en la segunda", async () => {
+    mockAdmin();
+    const eqMock = vi.fn().mockImplementation(() => ({ error: null, eq: eqMock }));
+    const updateMock = vi.fn().mockReturnValue({ eq: eqMock });
+
+    // Primera ejecucion: es owner, transfiere OK
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockImplementation(() => ({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { is_owner: true } }),
+        update: updateMock,
+      })),
+    });
+    const res1 = await transferirPropiedad("nuevo@test.com");
+    expect(res1.success).toBe(true);
+
+    // Segunda ejecucion: ya no es owner
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockImplementation(() => ({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { is_owner: false } }),
+        update: updateMock,
+      })),
+    });
+    const res2 = await transferirPropiedad("nuevo@test.com");
+    expect(res2.success).toBe(false);
+    expect(res2.error).toBe("Solo el propietario puede transferir la propiedad");
+  });
+});

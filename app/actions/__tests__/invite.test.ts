@@ -14,7 +14,7 @@ vi.mock("next/cache", () => ({
 
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
-import { invitarUsuario, cambiarPermisoUsuario, cambiarRolUsuario, cambiarPermisoExportar } from "../invite";
+import { invitarUsuario, eliminarUsuario, cambiarPermisoUsuario, cambiarRolUsuario, transferirPropiedad, cambiarPermisoExportar } from "../invite";
 
 function mockNoAdmin() {
   (createClient as any).mockResolvedValue({
@@ -203,5 +203,204 @@ describe("cambiarPermisoExportar", () => {
     });
     const res = await cambiarPermisoExportar("otro@test.com", false);
     expect(res.success).toBe(true);
+  });
+});
+
+// ─── invitarUsuario casos adicionales ────────────────────────────────────────
+
+describe("invitarUsuario - casos adicionales", () => {
+  it("normaliza el correo a lowercase", async () => {
+    mockAdmin();
+    const fromMock = {
+      select: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockResolvedValue({ error: null }),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+    };
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue(fromMock),
+      rpc: vi.fn().mockResolvedValue({ data: "ABCD1234", error: null }),
+    });
+    const res = await invitarUsuario("Juan", "JUAN@TEST.COM", "editor", "user");
+    expect(res.success).toBe(true);
+    const insertCall = fromMock.insert.mock.calls[0][0];
+    expect(insertCall.email).toBe("juan@test.com");
+  });
+
+  it("rechaza si falla la generacion del codigo", async () => {
+    mockAdmin();
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+      }),
+      rpc: vi.fn().mockResolvedValue({ data: null, error: { message: "rpc error" } }),
+    });
+    const res = await invitarUsuario("Juan", "juan@test.com");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("Error al generar código");
+  });
+
+  it("rechaza si falla el insert en allowed_emails", async () => {
+    mockAdmin();
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        insert: vi.fn().mockResolvedValue({ error: { message: "insert error" } }),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+      }),
+      rpc: vi.fn().mockResolvedValue({ data: "ABCD1234", error: null }),
+    });
+    const res = await invitarUsuario("Juan", "juan@test.com");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("Error al agregar usuario");
+  });
+});
+
+// ─── eliminarUsuario ──────────────────────────────────────────────────────────
+
+describe("eliminarUsuario", () => {
+  it("rechaza si no es admin", async () => {
+    mockNoAdmin();
+    const res = await eliminarUsuario("otro@test.com");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("No tienes permisos");
+  });
+
+  it("rechaza eliminar el propio usuario", async () => {
+    mockAdmin();
+    mockAdminClient();
+    const res = await eliminarUsuario("admin@a.com");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("No puedes eliminarte a ti mismo");
+  });
+
+  it("elimina usuario registrado correctamente", async () => {
+    mockAdmin();
+    const deleteAuthMock = vi.fn().mockResolvedValue({ error: null });
+    const deleteMock = vi.fn().mockReturnThis();
+    const eqMock = vi.fn().mockResolvedValue({ error: null });
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        delete: deleteMock,
+        eq: eqMock,
+      }),
+      auth: {
+        admin: {
+          listUsers: vi.fn().mockResolvedValue({
+            data: { users: [{ id: "u99", email: "otro@test.com" }] },
+          }),
+          deleteUser: deleteAuthMock,
+        },
+      },
+    });
+    const res = await eliminarUsuario("otro@test.com");
+    expect(res.success).toBe(true);
+    expect(deleteAuthMock).toHaveBeenCalledWith("u99");
+  });
+
+  it("elimina usuario no registrado (solo en allowed_emails)", async () => {
+    mockAdmin();
+    const deleteMock = vi.fn().mockReturnThis();
+    const eqMock = vi.fn().mockResolvedValue({ error: null });
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        delete: deleteMock,
+        eq: eqMock,
+      }),
+      auth: {
+        admin: {
+          listUsers: vi.fn().mockResolvedValue({ data: { users: [] } }),
+          deleteUser: vi.fn(),
+        },
+      },
+    });
+    const res = await eliminarUsuario("pendiente@test.com");
+    expect(res.success).toBe(true);
+  });
+});
+
+// ─── cambiarRolUsuario - casos adicionales ────────────────────────────────────
+
+describe("cambiarRolUsuario - casos adicionales", () => {
+  it("actualiza rol correctamente cuando no es owner", async () => {
+    mockAdmin();
+    const eqMock = vi.fn().mockImplementation(() => ({ error: null, eq: eqMock }));
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { is_owner: false } }),
+        update: vi.fn().mockReturnValue({ eq: eqMock }),
+      }),
+    });
+    const res = await cambiarRolUsuario("otro@test.com", "admin");
+    expect(res.success).toBe(true);
+  });
+});
+
+// ─── transferirPropiedad ──────────────────────────────────────────────────────
+
+describe("transferirPropiedad", () => {
+  it("rechaza si no es admin", async () => {
+    mockNoAdmin();
+    const res = await transferirPropiedad("nuevo@test.com");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("No tienes permisos");
+  });
+
+  it("rechaza si el que ejecuta no es owner", async () => {
+    mockAdmin();
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { is_owner: false } }),
+      }),
+    });
+    const res = await transferirPropiedad("nuevo@test.com");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("Solo el propietario puede transferir la propiedad");
+  });
+
+  it("transfiere propiedad correctamente", async () => {
+    mockAdmin();
+    const eqMock = vi.fn().mockImplementation(() => ({ error: null, eq: eqMock }));
+    const updateMock = vi.fn().mockReturnValue({ eq: eqMock });
+    let callCount = 0;
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: { is_owner: true } }),
+          };
+        }
+        return { update: updateMock, eq: eqMock };
+      }),
+    });
+    const res = await transferirPropiedad("nuevo@test.com");
+    expect(res.success).toBe(true);
+  });
+});
+
+// ─── cambiarPermisoUsuario - error en Supabase ────────────────────────────────
+
+describe("cambiarPermisoUsuario - casos adicionales", () => {
+  it("retorna error si falla la actualizacion en Supabase", async () => {
+    mockAdmin();
+    const eqMock = vi.fn().mockImplementation(() => ({ error: { message: "db error" }, eq: eqMock }));
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        update: vi.fn().mockReturnValue({ eq: eqMock }),
+      }),
+    });
+    const res = await cambiarPermisoUsuario("otro@test.com", "viewer");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("Error al actualizar permisos");
   });
 });

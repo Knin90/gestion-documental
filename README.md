@@ -1,28 +1,28 @@
-# 📄 Gestión Documental
+# Gestión Documental
 
 > Sistema web multi-tenant para gestión de documentos oficiales — reemplaza el uso de Excel en oficinas y organizaciones.
 
-**🌐 Producción:** [gestion.kunix.dev](https://gestion.kunix.dev) &nbsp;|&nbsp; **📦 Repo:** [github.com/Knin90/gestion-documental](https://github.com/Knin90/gestion-documental)
+**Producción:** [gestion.kunix.dev](https://gestion.kunix.dev) &nbsp;|&nbsp; **Repo:** [github.com/Knin90/gestion-documental](https://github.com/Knin90/gestion-documental)
 
 ---
 
-## ✨ Características
+## Características
 
-- 📄 **Documentos recibidos y enviados** — registro completo con adjuntos PDF opcionales
-- 🔐 **Autenticación segura** — email/password, Google OAuth, Microsoft OAuth + 2FA TOTP obligatorio
-- 👥 **Multi-tenant** — organizaciones completamente aisladas por `org_id` + RLS
-- 🎭 **Roles y permisos** — admin / user + editor / viewer
-- 🔍 **Búsqueda avanzada** — por ID, mes, año, tipo con paginación
-- 📊 **Dashboard** — estadísticas en tiempo real con gráficos Recharts
-- 📥 **Importar / Exportar Excel** — compatible con SheetJS
-- 🔔 **Notificaciones en tiempo real** — Supabase Realtime + WebSocket
-- ⚠️ **Monitoreo de almacenamiento** — alerta automática al 90% (pg_cron diario)
-- 🌙 **Tema claro / oscuro** — Aurora Forest + Dracula Theme
-- 🛡️ **Seguridad 8.5/10** — IDOR protegido, magic bytes, Cloudflare WAF
+- **Documentos recibidos y enviados** — registro completo con adjuntos PDF opcionales
+- **Autenticación segura** — email/password, Google OAuth, Microsoft OAuth + 2FA TOTP obligatorio
+- **Multi-tenant** — organizaciones completamente aisladas por `org_id` + RLS
+- **Roles y permisos** — admin / user + editor / viewer
+- **Búsqueda avanzada** — por ID, mes, año, tipo con paginación
+- **Dashboard** — estadísticas en tiempo real con gráficos Recharts
+- **Importar / Exportar Excel** — compatible con SheetJS
+- **Notificaciones en tiempo real** — Supabase Realtime + WebSocket
+- **Monitoreo de almacenamiento** — alerta automática al 90% (pg_cron diario)
+- **Tema claro / oscuro** — Aurora Forest + Dracula Theme
+- **Seguridad 8.5/10** — IDOR protegido, magic bytes, Cloudflare WAF
 
 ---
 
-## 🛠️ Stack
+## Stack
 
 | Capa | Tecnología |
 |---|---|
@@ -39,7 +39,7 @@
 
 ---
 
-## 🚀 Inicio Rápido
+## Inicio Rápido
 
 ### Prerrequisitos
 
@@ -86,7 +86,7 @@ pnpm dev
 
 ---
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 gestion-documental/
@@ -112,24 +112,23 @@ gestion-documental/
 
 ---
 
-## 🔐 Seguridad
+## Seguridad
 
 | Vulnerabilidad | Estado |
 |---|---|
-| IDOR | ✅ Protegido (org_id + RLS) |
-| File Upload RCE | ✅ Protegido (MIME + magic bytes %PDF) |
-| Auth bypass | ✅ Protegido (AAL2 obligatorio) |
-| XSS | ✅ Protegido (React escaping) |
-| SQL Injection | ✅ Protegido (Supabase prepared statements) |
-| Fingerprinting | ✅ Mitigado (Cloudflare proxy naranja) |
-| DDoS | ✅ Protegido (Cloudflare WAF) |
-| Brute force 2FA | ✅ Protegido (bloqueo 30s tras 3 intentos) |
+| IDOR | Protegido (org_id + RLS) |
+| File Upload RCE | Protegido (MIME + magic bytes %PDF) |
+| Auth bypass | Protegido (AAL2 obligatorio) |
+| XSS | Protegido (React escaping) |
+| SQL Injection | Protegido (Supabase prepared statements) |
+| Fingerprinting | Mitigado (Cloudflare proxy naranja) |
+| DDoS | Protegido (Cloudflare WAF) |
+| Brute force 2FA | Protegido (bloqueo 30s tras 3 intentos) |
 
-**Puntuación:** 8.5/10 — Verificado con Burp Suite Community Edition
 
 ---
 
-## 👥 Roles y Permisos
+## Roles y Permisos
 
 ```
 Propietario (Owner)
@@ -148,7 +147,7 @@ Propietario (Owner)
 
 ---
 
-## 🗄️ Base de Datos
+## Base de Datos
 
 6 tablas con RLS habilitado en todas:
 
@@ -163,7 +162,7 @@ Propietario (Owner)
 
 ---
 
-## ⚠️ Convenciones Importantes
+## Convenciones Importantes
 
 ```typescript
 // Next.js 16: proxy.ts (NO middleware.ts)
@@ -181,9 +180,9 @@ const OceanBackground = dynamic(() => import('./ocean'), { ssr: false })
 
 ---
 
-## 📊 Diagramas UML
+## Diagramas UML
 
-El proyecto incluye 15 diagramas PlantUML en `docs/diagramas/`:
+El proyecto incluye 15 diagramas Diagrama UML en `docs/diagramas/`:
 
 | # | Diagrama |
 |---|---|
@@ -203,11 +202,11 @@ El proyecto incluye 15 diagramas PlantUML en `docs/diagramas/`:
 | 14 | Base de Datos con seguridad |
 | 15 | Flujo Importar / Exportar Excel |
 
-Renderizar en [plantuml.com/plantuml/uml](https://www.plantuml.com/plantuml/uml)
+Re
 
 ---
 
-## 🚢 Despliegue
+## Despliegue
 
 El proyecto usa **Vercel** con auto-deploy en cada push a `main`:
 
@@ -226,7 +225,7 @@ Usuario → Cloudflare (proxy + WAF) → Vercel (Next.js) → Supabase (DB + Aut
 
 ---
 
-## 📝 Licencia
+## Licencia
 
 Proyecto privado — todos los derechos reservados.
 

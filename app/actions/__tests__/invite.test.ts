@@ -46,7 +46,7 @@ function mockAdminClient() {
   (createAdminClient as any).mockReturnValue({
     from: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnThis(),
-      insert: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockResolvedValue({ error: null }),
       update: vi.fn().mockReturnThis(),
       delete: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),

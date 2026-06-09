@@ -47,6 +47,7 @@ function mockUsuarioAutenticado() {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       is: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
       order: vi.fn().mockResolvedValue({ data: [], error: null }),
     }),
   });
@@ -173,6 +174,7 @@ describe("obtenerDocumentosParaExportar", () => {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
         is: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
         order: vi.fn().mockResolvedValue({ data: docs, error: null }),
       }),
     });
@@ -191,6 +193,7 @@ describe("obtenerDocumentosParaExportar", () => {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
         is: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
         order: vi.fn().mockResolvedValue({ data: null, error: null }),
       }),
     });
@@ -208,6 +211,7 @@ describe("obtenerDocumentosParaExportar", () => {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
         is: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
         order: vi.fn().mockResolvedValue({ data: null, error: { message: "db error" } }),
       }),
     });
@@ -228,11 +232,13 @@ describe("obtenerDocumentosParaExportar", () => {
       },
       from: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
         eq: vi.fn().mockImplementation((col: string, val: string) => {
           capturedEqArgs.push({ col, val });
           return {
             eq: vi.fn().mockReturnThis(),
             is: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
             order: vi.fn().mockResolvedValue({ data: docs, error: null }),
           };
         }),

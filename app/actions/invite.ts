@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
+import { registrarAuditLog } from "@/app/actions/audit";
 
 type ActionResult = {
   success: boolean;
@@ -77,6 +78,16 @@ export async function invitarUsuario(nombre: string, correo: string, permission:
     return { success: false, error: "Error al agregar usuario" };
   }
 
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "invitar_usuario",
+    entity: "usuario",
+    entity_id: emailLimpio,
+    details: { nombre: nombreLimpio, permission, role },
+  });
+
   revalidatePath("/perfil");
   return { success: true, access_code: codigo };
 }
@@ -103,6 +114,15 @@ export async function eliminarUsuario(email: string): Promise<ActionResult> {
 
   await admin.from("allowed_emails").delete().eq("email", email);
   await admin.from("profiles").delete().eq("email", email);
+
+  await registrarAuditLog({
+    org_id: resultado.orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "eliminar_usuario",
+    entity: "usuario",
+    entity_id: email,
+  });
 
   revalidatePath("/perfil");
   return { success: true };
@@ -136,6 +156,16 @@ export async function cambiarPermisoUsuario(email: string, permission: "editor" 
     .update({ permission })
     .eq("email", email)
     .eq("org_id", orgId);
+
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "cambiar_permiso",
+    entity: "usuario",
+    entity_id: email,
+    details: { permission },
+  });
 
   revalidatePath("/perfil");
   return { success: true };
@@ -172,6 +202,16 @@ export async function cambiarRolUsuario(email: string, role: "admin" | "user"): 
 
   if (error) return { success: false, error: "Error al cambiar rol" };
 
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "cambiar_rol",
+    entity: "usuario",
+    entity_id: email,
+    details: { role },
+  });
+
   revalidatePath("/agregar-usuario");
   return { success: true };
 }
@@ -198,6 +238,15 @@ export async function transferirPropiedad(emailNuevoOwner: string): Promise<Acti
   await admin.from("profiles").update({ is_owner: false, role: "user" }).eq("id", user.id);
   await admin.from("profiles").update({ is_owner: true, role: "admin" }).eq("email", emailNuevoOwner).eq("org_id", orgId);
 
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "transferir_propiedad",
+    entity: "usuario",
+    entity_id: emailNuevoOwner,
+  });
+
   revalidatePath("/agregar-usuario");
   return { success: true };
 }
@@ -205,7 +254,7 @@ export async function transferirPropiedad(emailNuevoOwner: string): Promise<Acti
 export async function cambiarPermisoExportar(email: string, can_export: boolean): Promise<ActionResult> {
   const resultado = await verificarAdmin();
   if (!resultado) return { success: false, error: "No tienes permisos" };
-  const { orgId } = resultado;
+  const { user, orgId } = resultado;
 
   const admin = getAdminClient();
 
@@ -216,6 +265,15 @@ export async function cambiarPermisoExportar(email: string, can_export: boolean)
     .eq("org_id", orgId);
 
   if (error) return { success: false, error: "Error al actualizar permiso de exportación" };
+
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: can_export ? "habilitar_exportacion" : "deshabilitar_exportacion",
+    entity: "usuario",
+    entity_id: email,
+  });
 
   revalidatePath("/agregar-usuario");
   return { success: true };

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
+import { registrarAuditLog } from "@/app/actions/audit";
 
 type ActionResult = {
   success: boolean;
@@ -73,6 +74,18 @@ export async function obtenerDocumentosParaExportar(tipo: "recibido" | "enviado"
   if (error) {
     console.error("Error al obtener documentos:", error.message);
     return { success: false, error: "Error al obtener los documentos", documentos: [] };
+  }
+
+  const { data: perfil } = await supabase.from("profiles").select("org_id, email").eq("id", user.id).single();
+  if (perfil) {
+    await registrarAuditLog({
+      org_id: perfil.org_id,
+      user_id: user.id,
+      user_email: perfil.email,
+      action: "exportar_documentos",
+      entity: "documento",
+      details: { tipo, cantidad: data?.length ?? 0 },
+    });
   }
 
   return { success: true, documentos: data ?? [] };

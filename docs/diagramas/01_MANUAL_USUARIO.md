@@ -1,4 +1,4 @@
-# 📋 Manual de Usuario — Gestión Documental
+# Manual de Usuario — Gestión Documental
 
 > **Versión:** 2.0 | **Fecha:** Junio 2026 | **URL:** [gestion.kunix.dev](https://gestion.kunix.dev)
 
@@ -34,12 +34,12 @@
 
 | Función | Descripción |
 |---|---|
-| 📄 Registrar documentos | Almacena notas, circulares, oficios y más |
-| 📎 Adjuntar PDFs | Guarda el archivo original junto al registro |
-| 🔍 Buscar rápido | Encuentra cualquier documento en segundos |
-| 📊 Ver estadísticas | Analiza la actividad documental de tu organización |
-| 👥 Trabajo en equipo | Múltiples usuarios con roles y permisos |
-| 📥 Importar / Exportar | Compatible con Excel para migración de datos |
+| Registrar documentos | Almacena notas, circulares, oficios y más |
+| Adjuntar PDFs | Guarda el archivo original junto al registro |
+| Buscar rápido | Encuentra cualquier documento en segundos |
+| Ver estadísticas | Analiza la actividad documental de tu organización |
+| Trabajo en equipo | Múltiples usuarios con roles y permisos |
+| Importar / Exportar | Compatible con Excel para migración de datos |
 
 ---
 
@@ -53,7 +53,7 @@ Ingresa desde cualquier navegador a:
 https://gestion.kunix.dev
 ```
 
-> ✅ Compatible con Chrome, Firefox, Edge y Safari.
+> Compatible con todos los navegadores.
 
 ### Tipos de cuenta
 
@@ -77,17 +77,17 @@ Existen dos formas de tener una cuenta:
 
 Puedes iniciar sesión de tres formas:
 
-#### 📧 Email y Contraseña
+#### Email y Contraseña
 1. Ingresa tu correo electrónico
 2. Ingresa tu contraseña
 3. Haz clic en **Iniciar sesión**
 
-#### 🔵 Google
+#### Google
 1. Haz clic en el botón **Google**
 2. Selecciona tu cuenta de Google
 3. Autoriza el acceso
 
-#### 🟦 Microsoft
+#### Microsoft
 1. Haz clic en el botón **Microsoft**
 2. Ingresa tus credenciales de Microsoft/Office 365
 3. Autoriza el acceso
@@ -120,7 +120,7 @@ El sistema requiere **verificación en dos pasos** para proteger tu cuenta.
 - Si tu sesión sigue activa → **entras directo sin pedir código**
 - Si cerraste sesión → ingresa el código de 6 dígitos de tu app
 
-> ⚠️ **Importante:** El código cambia cada 30 segundos. Si fallas 3 veces seguidas, habrá un bloqueo de 30 segundos antes de poder intentar nuevamente.
+> **Importante:** El código cambia cada 30 segundos. Si fallas 3 veces seguidas, habrá un bloqueo de 30 segundos antes de poder intentar nuevamente.
 
 ---
 
@@ -181,17 +181,17 @@ Los documentos se muestran de **18 en 18**. Usa los botones **Anterior** / **Sig
 
 | Campo | Obligatorio | Descripción |
 |---|---|---|
-| **Tipo** | ✅ Sí | Recibido o Enviado |
+| **Tipo** |  Sí | Recibido o Enviado |
 | **N° Nota** | No | Número o código del documento |
-| **Asunto** | ✅ Sí | Descripción del contenido |
+| **Asunto** |  Sí | Descripción del contenido |
 | **Procedencia** | No | De dónde proviene |
 | **Atendido / Asignado** | No | Persona responsable |
-| **Fecha** | ✅ Sí | Fecha del documento |
+| **Fecha** |  Sí | Fecha del documento |
 | **Archivo PDF** | No | Adjuntar el documento escaneado |
 
 3. Haz clic en **Guardar documento**
 
-> 📎 **Nota:** Puedes crear el documento sin PDF y adjuntarlo después desde la pantalla de edición.
+>  **Nota:** Puedes crear el documento sin PDF y adjuntarlo después desde la pantalla de edición.
 
 ### Restricciones del PDF
 
@@ -207,7 +207,7 @@ Los documentos se muestran de **18 en 18**. Usa los botones **Anterior** / **Sig
 3. Si deseas agregar o reemplazar el PDF, selecciona el archivo
 4. Haz clic en **Guardar cambios**
 
-> ✏️ Solo los usuarios con permiso **Editor** o rol **Admin** pueden editar documentos.
+>  Solo los usuarios con permiso **Editor** o rol **Admin** pueden editar documentos.
 
 ---
 
@@ -215,15 +215,13 @@ Los documentos se muestran de **18 en 18**. Usa los botones **Anterior** / **Sig
 
 ### Eliminar uno por uno
 
-1. En la lista, haz clic en el ícono 🗑️ de la fila del documento
+1. En la lista, haz clic en "eliminar" de la fila del documento
 2. El documento desaparece de la lista
 
 ### Eliminar todos los de un tipo (Solo Admin)
 
 1. Haz clic en **Eliminar todos** (botón rojo en la parte superior)
 2. Confirma la acción en el diálogo
-
-> ⚠️ Los documentos eliminados no se borran permanentemente de inmediato. Son marcados como eliminados y no aparecen en la lista, pero pueden recuperarse si es necesario.
 
 ---
 
@@ -259,8 +257,8 @@ El archivo Excel debe tener estas columnas:
 
 | Columna | Obligatorio |
 |---|---|
-| `description` o `Asunto` | ✅ Sí |
-| `document_date` o `Fecha` | ✅ Sí |
+| `description` o `Asunto` |  Sí |
+| `document_date` o `Fecha` |  Sí |
 | `type` o `Tipo` | Sí (recibido/enviado) |
 | `document_id` o `N° Nota` | No |
 | `signed_by` o `Procedencia` | No |
@@ -274,7 +272,7 @@ El archivo Excel debe tener estas columnas:
 4. Si todo está correcto, confirma la importación
 5. Los documentos aparecerán en la lista
 
-> ⚠️ Solo usuarios con permiso **Editor** o **Admin** pueden importar.
+> Solo usuarios con permiso **Editor** o **Admin** pueden importar.
 
 ---
 
@@ -287,7 +285,7 @@ Descarga todos los documentos en formato Excel para análisis externo.
 3. Haz clic en **Exportar**
 4. Se descarga automáticamente un archivo `.xlsx`
 
-> 📊 La exportación está disponible para **todos los usuarios**, incluyendo los de solo lectura.
+> La exportación está disponible para **todos los usuarios**, incluyendo los de solo lectura.
 
 ---
 
@@ -306,7 +304,7 @@ Descarga todos los documentos en formato Excel para análisis externo.
 2. Repite la contraseña en **Confirmar contraseña**
 3. Haz clic en **Cambiar contraseña**
 
-> 🔒 El correo electrónico **no se puede cambiar** desde el perfil. Contacta al administrador si necesitas cambiar el correo.
+> El correo electrónico **no se puede cambiar** desde el perfil. Contacta al administrador si necesitas cambiar el correo.
 
 ---
 
@@ -333,7 +331,7 @@ En la tabla de usuarios, usa el selector de la columna **Permiso** para cambiar 
 
 En la columna **Rol**, cambia entre **Admin** y **Usuario**.
 
-> ⚠️ No puedes cambiar el rol del **Propietario** de la organización.
+> No puedes cambiar el rol del **Propietario** de la organización.
 
 ### Transferir la propiedad
 
@@ -342,11 +340,11 @@ Si eres el **Propietario** y quieres ceder el cargo:
 2. Haz clic en el ícono 👑 en la fila del usuario
 3. Confirma la transferencia
 
-> ⚠️ Esta acción es irreversible a menos que el nuevo propietario te transfiera de vuelta.
+>  Esta acción es irreversible a menos que el nuevo propietario te transfiera de vuelta.
 
 ### Eliminar un usuario
 
-Haz clic en el ícono 🗑️ en la fila del usuario. Esto elimina su acceso al sistema.
+Haz clic en "eliminar" en la fila del usuario. Esto elimina su acceso al sistema.
 
 ---
 
@@ -358,10 +356,10 @@ El ícono 🔔 en el menú lateral muestra las notificaciones de tu organizació
 
 | Tipo | Descripción |
 |---|---|
-| 📄 Documento nuevo | Se registró un nuevo documento |
-| 📎 PDF subido | Se adjuntó un PDF a un documento |
-| 👤 Usuario nuevo | Un nuevo usuario se unió a la organización |
-| ⚠️ Almacenamiento al 90% | El espacio de PDFs está casi lleno |
+|  Documento nuevo | Se registró un nuevo documento |
+|  PDF subido | Se adjuntó un PDF a un documento |
+|  Usuario nuevo | Un nuevo usuario se unió a la organización |
+|  Almacenamiento al 90% | El espacio de PDFs está casi lleno |
 
 ### Marcar como leída
 
@@ -374,33 +372,10 @@ El ícono 🔔 en el menú lateral muestra las notificaciones de tu organizació
 
 En la parte inferior del menú lateral encontrarás el selector de tema:
 
-- ☀️ **Claro** — Tema Aurora Forest (verde suave)
-- 🌙 **Oscuro** — Tema Dracula (púrpura y cyan)
+- **Claro** — Tema Aurora Forest (verde suave)
+- **Oscuro** — Tema Dracula (púrpura y cyan)
 
 El tema se guarda automáticamente para tu próxima visita.
 
 ---
 
-## Preguntas Frecuentes
-
-**¿Puedo acceder desde el celular?**
-Sí, el sistema es totalmente responsivo y funciona en navegadores móviles.
-
-**¿Qué pasa si pierdo acceso a mi app de autenticación (2FA)?**
-Contacta al administrador de tu organización para que te ayude a restablecer el acceso.
-
-**¿Los documentos eliminados se pueden recuperar?**
-Los documentos se marcan como eliminados pero no se borran permanentemente. Contacta al administrador del sistema si necesitas recuperar un documento.
-
-**¿Cuánto espacio tienen los PDFs?**
-El plan actual soporta hasta **1 GB** de PDFs. Cuando el almacenamiento llegue al 90%, los administradores recibirán una notificación automática.
-
-**¿Cuántos usuarios puede tener mi organización?**
-No hay límite estricto, pero el sistema está optimizado para equipos de hasta **10 usuarios**.
-
-**¿Puedo tener múltiples organizaciones?**
-Cada cuenta de usuario pertenece a una sola organización. Para gestionar múltiples organizaciones necesitas cuentas separadas.
-
----
-
-> 📞 **¿Necesitas ayuda?** Contacta al administrador de tu organización o al soporte técnico en [gestion.kunix.dev](https://gestion.kunix.dev).

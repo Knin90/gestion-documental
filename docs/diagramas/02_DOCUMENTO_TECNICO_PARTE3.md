@@ -1,4 +1,4 @@
-# 🛠️ Documento Técnico — Parte 3: Código, GitHub y Testing
+# Documento Técnico — Parte 3: Código, GitHub y Testing
 
 ---
 
@@ -318,7 +318,7 @@ BEGIN
         INSERT INTO notifications (user_id, org_id, type, title, body, read)
         VALUES (
           admin_record.id, admin_record.org_id, 'storage_warning',
-          '⚠️ Almacenamiento al ' || ROUND(uso_porcentaje, 1) || '%',
+          'Almacenamiento al ' || ROUND(uso_porcentaje, 1) || '%',
           'El almacenamiento ha alcanzado ' || pg_size_pretty(total_bytes) || ' de 1 GB.',
           false
         );
@@ -340,15 +340,15 @@ SELECT cron.schedule('check-storage-daily', '0 8 * * *', 'SELECT check_storage_u
 
 | Vulnerabilidad | Mecanismo | Estado |
 |---|---|---|
-| **IDOR** | org_id filter + RLS | ✅ Protegido |
-| **File Upload RCE** | MIME + tamaño + magic bytes | ✅ Protegido |
-| **Auth bypass** | AAL2 obligatorio en middleware | ✅ Protegido |
-| **Path Traversal** | Next.js App Router | ✅ Protegido por framework |
-| **XSS** | React escaping automático | ✅ Protegido por framework |
-| **SQL Injection** | Supabase prepared statements | ✅ Protegido por ORM |
-| **Fingerprinting** | Cloudflare proxy naranja | ✅ Mitigado |
-| **DDoS** | Cloudflare WAF | ✅ Protegido |
-| **Brute force 2FA** | Bloqueo 30s tras 3 intentos | ✅ Protegido |
+| **IDOR** | org_id filter + RLS | Protegido |
+| **File Upload RCE** | MIME + tamaño + magic bytes | Protegido |
+| **Auth bypass** | AAL2 obligatorio en middleware | Protegido |
+| **Path Traversal** | Next.js App Router | Protegido por framework |
+| **XSS** | React escaping automático | Protegido por framework |
+| **SQL Injection** | Supabase prepared statements |  Protegido por ORM |
+| **Fingerprinting** | Cloudflare proxy naranja |  Mitigado |
+| **DDoS** | Cloudflare WAF | Protegido |
+| **Brute force 2FA** | Bloqueo 30s tras 3 intentos | Protegido |
 
 ### 9.2 RLS Policies implementadas
 
@@ -580,16 +580,6 @@ Para cada hito se verifican los siguientes escenarios:
 | Eliminar documento | Desaparece de la lista |
 | Viewer intenta crear | Error "Sin permiso" |
 
-#### Test de seguridad — IDOR
-
-```bash
-# Obtener UUID de un documento de la org
-# Intentar acceder sin sesión
-curl -I https://gestion.kunix.dev/documentos/92e5be3a-e00e-4ce3-8109-161d738e03d9
-# → HTTP 307 redirect a /login ✅
-
-# Intentar acceder con cuenta de otra organización
-# → Página vacía o 404 ✅
 ```
 
 ### 12.2 Verificar build de Vercel
@@ -686,6 +676,6 @@ curl -I https://kunix.dev
 
 ---
 
-> 📁 **Repositorio:** [github.com/Knin90/gestion-documental](https://github.com/Knin90/gestion-documental)  
-> 🌐 **Producción:** [gestion.kunix.dev](https://gestion.kunix.dev)  
-> 📅 **Última actualización:** Junio 2026
+>  **Repositorio:** [github.com/Knin90/gestion-documental](https://github.com/Knin90/gestion-documental)  
+>  **Producción:** [gestion.kunix.dev](https://gestion.kunix.dev)  
+>  **Última actualización:** Junio 2026

@@ -1,4 +1,4 @@
-# 🛠️ Documento Técnico — Gestión Documental
+# Documento Técnico — Gestión Documental
 
 > **Versión:** 2.0 | **Fecha:** Junio 2026  
 > **Repositorio:** [github.com/Knin90/gestion-documental](https://github.com/Knin90/gestion-documental)  
@@ -77,10 +77,6 @@ Del proceso de preguntas surgió la lista de funcionalidades agrupadas por hitos
 
 **Hito 0 — Planificación**
 - Diagramas UML (ERD, casos de uso, flujos)
-- Wireframes SVG de las 9 pantallas principales
-- Documento de planificación LaTeX (28 páginas)
-- `funcionalidades.md` con especificaciones
-- `STYLE_GUIDE.md` con tema visual Aurora Forest
 
 **Hito 1 — Autenticación**
 - Login email/password
@@ -170,7 +166,7 @@ VCS:        Git + GitHub
 | Vite + React | Sin Server Components, más configuración |
 | Remix | Ecosistema más pequeño, menos documentación |
 | SvelteKit | Curva de aprendizaje, menos librerías compatibles |
-| **Next.js 16** ✅ | SSR, Server Actions, App Router, Vercel integration |
+| **Next.js 16**  | SSR, Server Actions, App Router, Vercel integration |
 
 ### 3.4 Por qué Supabase y no otras opciones
 
@@ -179,14 +175,14 @@ VCS:        Git + GitHub
 | Firebase | NoSQL — relaciones complejas con multi-tenant |
 | PlanetScale | Sin Auth integrado, más configuración |
 | Neon + Auth.js | Dos servicios separados, más complejidad |
-| **Supabase** ✅ | PostgreSQL + Auth + Storage + RLS + Realtime en uno |
+| **Supabase**  | PostgreSQL + Auth + Storage + RLS + Realtime en uno |
 
 ### 3.5 Consideraciones especiales de Next.js 16
 
 Next.js 16 introduce cambios importantes respecto a versiones anteriores:
 
 ```typescript
-// ⚠️ IMPORTANTE: proxy.ts en lugar de middleware.ts
+// IMPORTANTE: proxy.ts en lugar de middleware.ts
 // El nombre del archivo Y la función exportada cambian
 
 // INCORRECTO (Next.js < 16):
@@ -215,12 +211,8 @@ export function proxy(request: NextRequest) {
 5. Ir a **Settings → API** y copiar:
    - `Project URL` → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon public` → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `service_role` → `SUPABASE_SERVICE_ROLE_KEY` (nunca exponer al cliente)
+   - `service_role` → `SUPABASE_SERVICE_ROLE_KEY` 
 
-```
-Proyecto ID: jxdolalnzyougapygskx
-URL: https://jxdolalnzyougapygskx.supabase.co
-```
 
 #### Configurar Auth en Supabase
 
@@ -237,7 +229,7 @@ URL: https://jxdolalnzyougapygskx.supabase.co
 
 3. **Authentication → Providers → Azure:**
    - Registrar app en [Azure Portal](https://portal.azure.com)
-   - Client ID: `c4f6f4f1-9fce-4020-bd42-2d44e4128394`
+   - Client ID: `xxxxxxxxxxxxxxxxxxxxxxxxx`
    - Redirect URI: `https://jxdolalnzyougapygskx.supabase.co/auth/v1/callback`
 
 4. **Authentication → MFA:**
@@ -257,8 +249,8 @@ Ejecutar `schema.sql` en el SQL Editor de Supabase con todas las tablas, RLS pol
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://jxdolalnzyougapygskx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=xxxxxxxxxxxxx
+SUPABASE_SERVICE_ROLE_KEY=xxxxxxxxxxxxxxxx
 CRON_SECRET=<hex generado con openssl rand -hex 32>
 ```
 

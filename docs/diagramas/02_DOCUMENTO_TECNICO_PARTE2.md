@@ -1,4 +1,4 @@
-# 🛠️ Documento Técnico — Parte 2: Flujo de Trabajo y Estructura
+# Documento Técnico — Parte 2: Flujo de Trabajo y Estructura
 
 ---
 

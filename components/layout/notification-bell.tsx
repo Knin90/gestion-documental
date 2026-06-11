@@ -82,6 +82,7 @@ export function NotificationBell() {
   async function handleMarcarTodas() {
     setNotificaciones((prev) => prev.map((n) => ({ ...n, read: true })));
     await marcarTodasLeidas();
+    setAbierto(false);
   }
 
   async function handleMarcarUna(id: string) {

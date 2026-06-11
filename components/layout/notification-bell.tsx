@@ -119,7 +119,7 @@ export function NotificationBell() {
 
       {abierto && (
         <div
-          className="absolute bottom-10 left-0 z-50 w-80 rounded-xl border bg-card shadow-lg"
+          className="fixed bottom-16 left-16 z-50 w-80 rounded-xl border bg-card shadow-lg"
           style={{ borderColor: "var(--border)" }}
         >
           {/* Header */}

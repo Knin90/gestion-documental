@@ -154,8 +154,8 @@ export async function crearDocumento(formData: FormData): Promise<ActionResult> 
     user_email: user.email!,
     action: "crear_documento",
     entity: "documento",
-    entity_id: data.id,
-    details: { type: resultado.data.type, document_id: resultado.data.document_id },
+    entity_id: resultado.data.document_id ?? data.id,
+    details: { type: resultado.data.type, uuid: data.id },
   });
 
   revalidatePath("/documentos");
@@ -226,8 +226,8 @@ export async function actualizarDocumento(
     user_email: user.email!,
     action: "actualizar_documento",
     entity: "documento",
-    entity_id: id,
-    details: { type: resultado.data.type, document_id: resultado.data.document_id },
+    entity_id: resultado.data.document_id ?? id,
+    details: { type: resultado.data.type, uuid: id },
   });
 
   revalidatePath("/documentos");
@@ -249,11 +249,19 @@ export async function eliminarDocumento(id: string): Promise<ActionResult> {
   }
 
   const admin = getAdminClient();
+
+  // Obtener document_id antes de borrar para el log
+  const { data: docInfo } = await admin
+    .from("documents")
+    .select("document_id")
+    .eq("id", id)
+    .single();
+
   const { error } = await admin
     .from("documents")
     .update({ deleted_at: new Date().toISOString(), updated_by: user.id })
     .eq("id", id)
-    .eq("org_id", orgId)       // ← solo puede borrar docs de su org
+    .eq("org_id", orgId)
     .is("deleted_at", null);
 
   if (error) {
@@ -267,7 +275,8 @@ export async function eliminarDocumento(id: string): Promise<ActionResult> {
     user_email: user.email!,
     action: "eliminar_documento",
     entity: "documento",
-    entity_id: id,
+    entity_id: docInfo?.document_id ?? id,
+    details: { uuid: id },
   });
 
   revalidatePath("/documentos");

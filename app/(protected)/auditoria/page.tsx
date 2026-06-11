@@ -24,6 +24,10 @@ const ACCION_CONFIG: Record<string, { label: string; icon: React.ReactNode; colo
   deshabilitar_exportacion: { label: "Deshabilitó exportación",icon: <Download className="h-3.5 w-3.5" />, color: "bg-gray-100 text-gray-800" },
   importar_documentos:      { label: "Importó documentos",     icon: <Upload className="h-3.5 w-3.5" />,   color: "bg-cyan-100 text-cyan-800" },
   exportar_documentos:      { label: "Exportó documentos",     icon: <Download className="h-3.5 w-3.5" />, color: "bg-teal-100 text-teal-800" },
+  crear_documento:           { label: "Creó documento",          icon: <FileText className="h-3.5 w-3.5" />,  color: "bg-blue-100 text-blue-800" },
+  actualizar_documento:      { label: "Actualizó documento",     icon: <FileText className="h-3.5 w-3.5" />,  color: "bg-yellow-100 text-yellow-800" },
+  eliminar_documento:        { label: "Eliminó documento",       icon: <Trash2 className="h-3.5 w-3.5" />,   color: "bg-red-100 text-red-800" },
+  eliminar_todos_documentos: { label: "Eliminó todos los docs",  icon: <Trash2 className="h-3.5 w-3.5" />,   color: "bg-red-200 text-red-900" },
 };
 
 function formatFecha(iso: string) {

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { registrarAuditLog } from "@/app/actions/audit";
 import { documentoSchema } from "@/lib/schemas/document";
 
 type ActionResult = {
@@ -147,6 +148,16 @@ export async function crearDocumento(formData: FormData): Promise<ActionResult> 
       .eq("id", data.id);
   }
 
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "crear_documento",
+    entity: "documento",
+    entity_id: data.id,
+    details: { type: resultado.data.type, document_id: resultado.data.document_id },
+  });
+
   revalidatePath("/documentos");
   revalidatePath("/dashboard");
   return { success: true, id: data.id };
@@ -209,6 +220,16 @@ export async function actualizarDocumento(
     return { success: false, error: "Error al actualizar el documento" };
   }
 
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "actualizar_documento",
+    entity: "documento",
+    entity_id: id,
+    details: { type: resultado.data.type, document_id: resultado.data.document_id },
+  });
+
   revalidatePath("/documentos");
   revalidatePath(`/documentos/${id}`);
   revalidatePath("/dashboard");
@@ -239,6 +260,15 @@ export async function eliminarDocumento(id: string): Promise<ActionResult> {
     console.error("Error al eliminar documento:", error.message);
     return { success: false, error: "Error al eliminar el documento" };
   }
+
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "eliminar_documento",
+    entity: "documento",
+    entity_id: id,
+  });
 
   revalidatePath("/documentos");
   revalidatePath("/dashboard");
@@ -271,6 +301,15 @@ export async function eliminarTodosDocumentos(
     console.error("Error al eliminar todos:", error.message);
     return { success: false, error: "Error al eliminar los documentos" };
   }
+
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "eliminar_todos_documentos",
+    entity: "documento",
+    details: { tipo: tipo },
+  });
 
   revalidatePath("/documentos");
   revalidatePath("/dashboard");

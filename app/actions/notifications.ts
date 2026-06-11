@@ -39,3 +39,26 @@ export async function marcarUnaLeida(id: string) {
   revalidatePath("/");
   return { success: true };
 }
+
+export async function limpiarLeidas() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("org_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.org_id) return { success: false };
+
+  await supabase
+    .from("notifications")
+    .delete()
+    .eq("org_id", profile.org_id)
+    .eq("read", true);
+
+  revalidatePath("/");
+  return { success: true };
+}

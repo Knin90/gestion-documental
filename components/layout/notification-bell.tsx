@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { marcarTodasLeidas, marcarUnaLeida } from "@/app/actions/notifications";
+import { marcarTodasLeidas, marcarUnaLeida, limpiarLeidas } from "@/app/actions/notifications";
 
 interface Notificacion {
   id: string;
@@ -79,6 +79,11 @@ export function NotificationBell() {
     return () => document.removeEventListener("mousedown", handleClickFuera);
   }, []);
 
+  async function handleLimpiarLeidas() {
+    setNotificaciones((prev) => prev.filter((n) => !n.read));
+    await limpiarLeidas();
+  }
+
   async function handleMarcarTodas() {
     setNotificaciones((prev) => prev.map((n) => ({ ...n, read: true })));
     await marcarTodasLeidas();
@@ -126,14 +131,24 @@ export function NotificationBell() {
           {/* Header */}
           <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: "var(--border)" }}>
             <span className="text-sm font-semibold">Notificaciones</span>
+            <div className="flex items-center gap-3">
             {noLeidas > 0 && (
               <button
                 onClick={handleMarcarTodas}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
-                Marcar todas como leídas
+                Marcar leídas
               </button>
             )}
+            {notificaciones.some((n) => n.read) && (
+              <button
+                onClick={handleLimpiarLeidas}
+                className="text-xs text-red-500 hover:text-red-700 transition-colors"
+              >
+                Limpiar leídas
+              </button>
+            )}
+          </div>
           </div>
 
           {/* Lista */}

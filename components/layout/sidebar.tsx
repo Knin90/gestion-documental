@@ -16,6 +16,7 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
+  Shield,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -32,6 +33,7 @@ const ITEMS_NAVEGACION: { href: string; label: string; icon: LucideIcon; adminOn
   { href: "/buscar", label: "Buscar", icon: Search },
   { href: "/importar", label: "Importar", icon: Upload },
   { href: "/exportar", label: "Exportar", icon: Download },
+  { href: "/auditoria", label: "Auditoría", icon: Shield, adminOnly: true },
 ] as const;
 
 interface SidebarContenidoProps {

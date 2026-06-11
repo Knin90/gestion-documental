@@ -22,7 +22,12 @@ interface AuditLogParams {
 export async function registrarAuditLog(params: AuditLogParams) {
   try {
     const admin = getAdminClient();
-    await admin.from("audit_logs").insert(params);
+    const { error } = await admin.from("audit_logs").insert(params);
+    if (error) {
+      console.error("Error insertando audit log:", JSON.stringify(error));
+    } else {
+      console.log("Audit log registrado:", params.action);
+    }
   } catch (err) {
     console.error("Error registrando audit log:", err);
   }

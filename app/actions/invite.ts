@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { registrarAuditLog } from "@/app/actions/audit";
+import { checkRateLimit } from "@/app/actions/rate-limit";
 
 type ActionResult = {
   success: boolean;
@@ -40,6 +41,16 @@ export async function invitarUsuario(nombre: string, correo: string, permission:
   if (!resultado) return { success: false, error: "No tienes permisos" };
 
   const { user, orgId } = resultado;
+
+  const rl = await checkRateLimit({
+    key: `invitar:${user.id}`,
+    maxAttempts: 10,
+    windowMinutes: 60,
+  });
+  if (!rl.allowed) {
+    return { success: false, error: `Demasiadas invitaciones. Intenta de nuevo en ${rl.resetIn} minuto${rl.resetIn !== 1 ? "s" : ""}.` };
+  }
+
   const admin = getAdminClient();
   const emailLimpio = correo.trim().toLowerCase();
   const nombreLimpio = nombre.trim();
@@ -98,6 +109,15 @@ export async function eliminarUsuario(email: string): Promise<ActionResult> {
 
   const { user } = resultado;
   if (email === user.email) return { success: false, error: "No puedes eliminarte a ti mismo" };
+
+  const rl = await checkRateLimit({
+    key: `eliminar:${user.id}`,
+    maxAttempts: 5,
+    windowMinutes: 60,
+  });
+  if (!rl.allowed) {
+    return { success: false, error: `Demasiadas eliminaciones. Intenta de nuevo en ${rl.resetIn} minuto${rl.resetIn !== 1 ? "s" : ""}.` };
+  }
 
   const admin = getAdminClient();
 
@@ -220,6 +240,15 @@ export async function transferirPropiedad(emailNuevoOwner: string): Promise<Acti
   const resultado = await verificarAdmin();
   if (!resultado) return { success: false, error: "No tienes permisos" };
   const { user, orgId } = resultado;
+
+  const rl = await checkRateLimit({
+    key: `transferir:${user.id}`,
+    maxAttempts: 3,
+    windowMinutes: 60,
+  });
+  if (!rl.allowed) {
+    return { success: false, error: `Demasiados intentos. Intenta de nuevo en ${rl.resetIn} minuto${rl.resetIn !== 1 ? "s" : ""}.` };
+  }
 
   const admin = getAdminClient();
 

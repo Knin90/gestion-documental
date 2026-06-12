@@ -8,6 +8,14 @@ vi.mock("@supabase/supabase-js", () => ({
   createClient: vi.fn(),
 }));
 
+vi.mock("@/app/actions/rate-limit", () => ({
+  checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, remaining: 9, resetIn: 60 }),
+}));
+
+vi.mock("@/app/actions/audit", () => ({
+  registrarAuditLog: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
@@ -391,19 +399,16 @@ describe("transferirPropiedad", () => {
     mockAdmin();
     const eqMock = vi.fn().mockImplementation(() => ({ error: null, eq: eqMock }));
     const updateMock = vi.fn().mockReturnValue({ eq: eqMock });
-    let callCount = 0;
     (createAdminClient as any).mockReturnValue({
-      from: vi.fn().mockImplementation(() => {
-        callCount++;
-        if (callCount === 1) {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: { is_owner: true } }),
-          };
-        }
-        return { update: updateMock, eq: eqMock };
-      }),
+      from: vi.fn().mockImplementation(() => ({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { is_owner: true } }),
+        update: updateMock,
+        insert: vi.fn().mockResolvedValue({ error: null }),
+        delete: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+      })),
     });
     const res = await transferirPropiedad("nuevo@test.com");
     expect(res.success).toBe(true);

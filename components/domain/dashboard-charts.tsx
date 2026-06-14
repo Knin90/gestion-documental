@@ -67,8 +67,8 @@ export function DashboardCharts({ datosPorMes, datosPorAnio }: DashboardChartsPr
   };
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <div className="rounded-xl border bg-card p-6">
+    <div className="grid gap-6 md:grid-cols-2 min-w-0">
+      <div className="rounded-xl border bg-card p-6 min-w-0 overflow-hidden">
         <h3 className="mb-4 text-sm font-semibold text-card-foreground">
           Documentos por mes (últimos 12 meses)
         </h3>
@@ -89,7 +89,7 @@ export function DashboardCharts({ datosPorMes, datosPorAnio }: DashboardChartsPr
         )}
       </div>
 
-      <div className="rounded-xl border bg-card p-6">
+      <div className="rounded-xl border bg-card p-6 min-w-0 overflow-hidden">
         <h3 className="mb-4 text-sm font-semibold text-card-foreground">
           Documentos por año
         </h3>

@@ -116,7 +116,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const datosPorAnio = (datos.porAnio ?? []).map((d: { anio: string; total: number }) => ({ anio: d.anio, total: d.total }));
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 min-w-0 overflow-x-hidden">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           {orgName && (

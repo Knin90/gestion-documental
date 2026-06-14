@@ -19,7 +19,7 @@ export default function ProtectedLayoutClient({ children }: LayoutProtegidoProps
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header onAbrirMenu={() => setMenuAbierto(true)} />
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto min-h-0">
           {children}
         </main>
       </div>

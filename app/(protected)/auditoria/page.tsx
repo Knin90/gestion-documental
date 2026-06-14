@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Shield, User, FileText, Download, Upload, Key, Trash2, Crown } from "lucide-react";
+import { Shield, User, FileText, Download, Upload, Key, Trash2, Crown, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface AuditLog {
   id: string;
@@ -13,6 +13,8 @@ interface AuditLog {
   details: Record<string, unknown> | null;
   created_at: string;
 }
+
+const REGISTROS_POR_PAGINA = 20;
 
 const ACCION_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   invitar_usuario:          { label: "Invitó usuario",         icon: <User className="h-3.5 w-3.5" />,     color: "bg-blue-100 text-blue-800" },
@@ -61,6 +63,7 @@ export default function AuditoriaPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [cargando, setCargando] = useState(true);
   const [filtroAccion, setFiltroAccion] = useState("todos");
+  const [pagina, setPagina] = useState(1);
   const supabase = createClient();
 
   useEffect(() => {
@@ -70,7 +73,7 @@ export default function AuditoriaPage() {
         .from("audit_logs")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(200)
+        .limit(500)
         .then(({ data }) => {
           setLogs(data ?? []);
           setCargando(false);
@@ -78,9 +81,18 @@ export default function AuditoriaPage() {
     });
   }, []);
 
+  // Resetear página al cambiar filtro
+  useEffect(() => {
+    setPagina(1);
+  }, [filtroAccion]);
+
   const logsFiltrados = filtroAccion === "todos"
     ? logs
     : logs.filter(l => l.action === filtroAccion);
+
+  const totalPaginas = Math.ceil(logsFiltrados.length / REGISTROS_POR_PAGINA);
+  const inicio = (pagina - 1) * REGISTROS_POR_PAGINA;
+  const logsEnPagina = logsFiltrados.slice(inicio, inicio + REGISTROS_POR_PAGINA);
 
   if (cargando) {
     return (
@@ -128,48 +140,83 @@ export default function AuditoriaPage() {
             No hay registros de auditoría aún.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Fecha</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Usuario</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Acción</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Objetivo</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Detalles</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {logsFiltrados.map((log) => {
-                  const config = ACCION_CONFIG[log.action];
-                  return (
-                    <tr key={log.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                        {formatFecha(log.created_at)}
-                      </td>
-                      <td className="px-4 py-3 text-xs">{log.user_email}</td>
-                      <td className="px-4 py-3">
-                        {config ? (
-                          <span className={"inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium " + config.color}>
-                            {config.icon}
-                            {config.label}
-                          </span>
-                        ) : (
-                          <span className="text-xs">{log.action}</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {log.entity_id ?? "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <DetallesExtra action={log.action} details={log.details} />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Fecha</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Usuario</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Acción</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Objetivo</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">Detalles</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {logsEnPagina.map((log) => {
+                    const config = ACCION_CONFIG[log.action];
+                    return (
+                      <tr key={log.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                          {formatFecha(log.created_at)}
+                        </td>
+                        <td className="px-4 py-3 text-xs">{log.user_email}</td>
+                        <td className="px-4 py-3">
+                          {config ? (
+                            <span className={"inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium " + config.color}>
+                              {config.icon}
+                              {config.label}
+                            </span>
+                          ) : (
+                            <span className="text-xs">{log.action}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                          {log.entity_id ?? "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <DetallesExtra action={log.action} details={log.details} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {totalPaginas > 1 && (
+              <div className="flex items-center justify-between border-t px-4 py-3">
+                <span className="text-xs text-muted-foreground">
+                  Mostrando {inicio + 1}–{Math.min(inicio + REGISTROS_POR_PAGINA, logsFiltrados.length)} de {logsFiltrados.length}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setPagina(p => Math.max(1, p - 1))}
+                    disabled={pagina === 1}
+                    className="rounded-lg p-1.5 hover:bg-muted disabled:opacity-40 transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(p => (
+                    <button
+                      key={p}
+                      onClick={() => setPagina(p)}
+                      className={"rounded-lg px-2.5 py-1 text-xs font-medium transition-colors " + (p === pagina ? "bg-sidebar-primary text-sidebar-primary-foreground" : "hover:bg-muted")}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
+                    disabled={pagina === totalPaginas}
+                    className="rounded-lg p-1.5 hover:bg-muted disabled:opacity-40 transition-colors"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

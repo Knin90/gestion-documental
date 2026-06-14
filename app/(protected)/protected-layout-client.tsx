@@ -11,13 +11,13 @@ export default function ProtectedLayoutClient({ children }: LayoutProtegidoProps
   const [menuAbierto, setMenuAbierto] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden bg-background max-w-[100vw]">
       <SidebarDesktop />
       <SidebarMobile
         estaAbierto={menuAbierto}
         onCerrar={() => setMenuAbierto(false)}
       />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         <Header onAbrirMenu={() => setMenuAbierto(true)} />
         <main className="flex-1 overflow-y-auto min-h-0">
           {children}

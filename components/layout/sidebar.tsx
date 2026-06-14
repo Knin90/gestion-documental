@@ -131,7 +131,7 @@ function SidebarContenido({ onNavigate, collapsed, onToggle }: SidebarContenidoP
           onClick={handleCerrarSesion}
           title={collapsed ? "Cerrar sesión" : undefined}
           style={{ justifyContent: collapsed ? "center" : undefined }}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-all duration-150 hover:bg-red-500/10 hover:text-red-500 cursor-pointer group"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           {!collapsed && <span>Cerrar sesión</span>}

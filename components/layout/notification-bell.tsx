@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { marcarTodasLeidas, marcarUnaLeida, limpiarLeidas } from "@/app/actions/notifications";
@@ -20,14 +20,36 @@ const ICONOS: Record<string, string> = {
   usuario_nuevo: "👤",
 };
 
+function formatearFecha(fecha: string, ahora: number) {
+  const diff = ahora - new Date(fecha).getTime();
+  const mins = Math.floor(diff / 60000);
+  const horas = Math.floor(diff / 3600000);
+  const dias = Math.floor(diff / 86400000);
+  if (mins < 1) return "Ahora";
+  if (mins < 60) return `Hace ${mins}m`;
+  if (horas < 24) return `Hace ${horas}h`;
+  return `Hace ${dias}d`;
+}
+
 export function NotificationBell() {
   const [abierto, setAbierto] = useState(false);
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [cargando, setCargando] = useState(true);
   const ref = useRef<HTMLDivElement>(null);
+  const orgIdRef = useRef<string | null>(null);
   const supabase = createClient();
 
   const noLeidas = notificaciones.filter((n) => !n.read).length;
+
+  // Congela "ahora" en el momento del memo, no en cada render — evita
+  // llamar Date.now() durante el render (impuro).
+  const notificacionesFormateadas = useMemo(() => {
+    const ahora = Date.now();
+    return notificaciones.map((n) => ({
+      ...n,
+      fechaFormateada: formatearFecha(n.created_at, ahora),
+    }));
+  }, [notificaciones]);
 
   async function cargar() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -40,6 +62,7 @@ export function NotificationBell() {
       .single();
 
     if (!profile?.org_id) return;
+    orgIdRef.current = profile.org_id;
 
     const { data } = await supabase
       .from("notifications")
@@ -52,20 +75,31 @@ export function NotificationBell() {
     setCargando(false);
   }
 
-  // Realtime — escucha nuevas notificaciones
+  // Realtime — escucha nuevas notificaciones de la propia organización
   useEffect(() => {
-    cargar();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
-    const channel = supabase
-      .channel("notifications")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications" },
-        () => cargar()
-      )
-      .subscribe();
+    (async () => {
+      await cargar();
+      if (!orgIdRef.current) return;
+      channel = supabase
+        .channel("notifications")
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "notifications",
+            filter: `org_id=eq.${orgIdRef.current}`,
+          },
+          () => cargar()
+        )
+        .subscribe();
+    })();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   // Cerrar al hacer clic fuera
@@ -80,32 +114,37 @@ export function NotificationBell() {
   }, []);
 
   async function handleLimpiarLeidas() {
+    const previo = notificaciones;
     setNotificaciones((prev) => prev.filter((n) => !n.read));
-    await limpiarLeidas();
+    const res = await limpiarLeidas();
+    if (!res.success) {
+      setNotificaciones(previo);
+      console.error("No se pudo limpiar notificaciones leídas:", res.error);
+    }
   }
 
   async function handleMarcarTodas() {
+    const previo = notificaciones;
     setNotificaciones((prev) => prev.map((n) => ({ ...n, read: true })));
-    await marcarTodasLeidas();
+    const res = await marcarTodasLeidas();
+    if (!res.success) {
+      setNotificaciones(previo);
+      console.error("No se pudieron marcar todas como leídas:", res.error);
+      return;
+    }
     setAbierto(false);
   }
 
   async function handleMarcarUna(id: string) {
+    const previo = notificaciones;
     setNotificaciones((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
-    await marcarUnaLeida(id);
-  }
-
-  function formatearFecha(fecha: string) {
-    const diff = Date.now() - new Date(fecha).getTime();
-    const mins = Math.floor(diff / 60000);
-    const horas = Math.floor(diff / 3600000);
-    const dias = Math.floor(diff / 86400000);
-    if (mins < 1) return "Ahora";
-    if (mins < 60) return `Hace ${mins}m`;
-    if (horas < 24) return `Hace ${horas}h`;
-    return `Hace ${dias}d`;
+    const res = await marcarUnaLeida(id);
+    if (!res.success) {
+      setNotificaciones(previo);
+      console.error("No se pudo marcar como leída:", res.error);
+    }
   }
 
   return (
@@ -165,13 +204,13 @@ export function NotificationBell() {
                   </div>
                 ))}
               </div>
-            ) : notificaciones.length === 0 ? (
+            ) : notificacionesFormateadas.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 gap-2">
                 <Bell className="h-6 w-6 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">Sin notificaciones</p>
               </div>
             ) : (
-              notificaciones.map((n) => (
+              notificacionesFormateadas.map((n) => (
                 <button
                   key={n.id}
                   onClick={() => !n.read && handleMarcarUna(n.id)}
@@ -193,7 +232,7 @@ export function NotificationBell() {
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground mt-1">
-                      {formatearFecha(n.created_at)}
+                      {n.fechaFormateada}
                     </p>
                   </div>
                   {!n.read && (

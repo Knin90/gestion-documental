@@ -79,8 +79,7 @@ export function NotificationBell() {
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
-    (async () => {
-      await cargar();
+    cargar().then(() => {
       if (!orgIdRef.current) return;
       channel = supabase
         .channel("notifications")
@@ -95,7 +94,7 @@ export function NotificationBell() {
           () => cargar()
         )
         .subscribe();
-    })();
+    });
 
     return () => {
       if (channel) supabase.removeChannel(channel);

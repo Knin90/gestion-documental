@@ -45,7 +45,7 @@ export default async function DocumentosPage({ searchParams }: PageProps) {
     .eq("type", tipo)
     .eq("org_id", orgId)
     .is("deleted_at", null)
-    .order("document_date", { ascending: false })
+    .order("created_at", { ascending: false })
     .range(desde, desde + DOCUMENTOS_POR_PAGINA - 1);
 
   if (soloPendientes) query = query.is("pdf_url", null);

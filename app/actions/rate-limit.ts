@@ -30,9 +30,20 @@ export async function checkRateLimit(config: RateLimitConfig): Promise<RateLimit
 
   try {
     // 1. Limpieza asíncrona preventiva (no bloqueante para el hilo principal de lectura)
-    admin.from("rate_limits").delete().lt("window_start", windowStart).catch((err) => {
-      console.error("Error en limpieza en segundo plano de rate limits:", err);
-    });
+    (async () => {
+      try {
+        const { error: cleanupError } = await admin
+          .from("rate_limits")
+          .delete()
+          .lt("window_start", windowStart);
+
+        if (cleanupError) {
+          console.error("Error en limpieza en segundo plano de rate limits:", cleanupError);
+        }
+      } catch (err) {
+        console.error("Error en limpieza en segundo plano de rate limits (throw):", err);
+      }
+    })();
 
     // 2. Buscar intentos en la ventana actual u obtener una fila preexistente utilizando UPSERT nativo
     const { data, error: errorConsulta } = await admin

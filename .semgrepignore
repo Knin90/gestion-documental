@@ -1,0 +1,18 @@
+# Tooling vendido (harness/plugin ECC) — no es código de la aplicación.
+# Se trata como dependencia de terceros, igual que node_modules.
+.claude/
+
+# Dependencias y artefactos de build
+node_modules/
+.next/
+coverage/
+dist/
+build/
+
+# Lockfiles y datos generados
+pnpm-lock.yaml
+reporte_arquitectura.txt
+
+# Config del gestor de paquetes: se mantiene minimum-release-age=1440 (24 h) a propósito.
+# Regla npm-missing-minimum-release-age excluida por decisión de política.
+.npmrc

@@ -1,0 +1,1918 @@
+=== CÓDIGO CRÍTICO ===
+\n--- Archivo: app/actions/invite.ts ---
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { revalidatePath } from "next/cache";
+import { registrarAuditLog } from "@/app/actions/audit";
+import { checkRateLimit } from "@/app/actions/rate-limit";
+
+type ActionResult = {
+  success: boolean;
+  error?: string;
+  access_code?: string;
+};
+
+function getAdminClient() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+async function verificarAdmin() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: perfil } = await supabase
+    .from("profiles")
+    .select("role, org_id")
+    .eq("id", user.id)
+    .single();
+
+  if (perfil?.role !== "admin") return null;
+  if (!perfil?.org_id) return null;
+
+  return { user, orgId: perfil.org_id as string };
+}
+
+export async function invitarUsuario(nombre: string, correo: string, permission: "editor" | "viewer" = "editor", role: "admin" | "user" = "user"): Promise<ActionResult> {
+  const resultado = await verificarAdmin();
+  if (!resultado) return { success: false, error: "No tienes permisos" };
+
+  const { user, orgId } = resultado;
+
+  const rl = await checkRateLimit({
+    key: `invitar:${user.id}`,
+    maxAttempts: 10,
+    windowMinutes: 60,
+  });
+  if (!rl.allowed) {
+    return { success: false, error: `Demasiadas invitaciones. Intenta de nuevo en ${rl.resetIn} minuto${rl.resetIn !== 1 ? "s" : ""}.` };
+  }
+
+  const admin = getAdminClient();
+  const emailLimpio = correo.trim().toLowerCase();
+  const nombreLimpio = nombre.trim();
+
+  if (!emailLimpio || !nombreLimpio) {
+    return { success: false, error: "Nombre y correo son obligatorios" };
+  }
+
+  const { data: existe } = await admin
+    .from("allowed_emails")
+    .select("id")
+    .eq("email", emailLimpio)
+    .maybeSingle();
+
+  if (existe) return { success: false, error: "Este correo ya está registrado" };
+
+  const { data: codigo, error: errorCodigo } = await admin.rpc("generate_access_code");
+  if (errorCodigo || !codigo) return { success: false, error: "Error al generar código" };
+
+  const { error } = await admin
+    .from("allowed_emails")
+    .insert({
+      email: emailLimpio,
+      full_name: nombreLimpio,
+      notes: nombreLimpio,
+      access_code: codigo,
+      invited_by: user.id,
+      is_active: true,
+      org_id: orgId,
+      permission: permission,
+      role: role,
+    });
+
+  if (error) {
+    console.error("Error:", error.message);
+    return { success: false, error: "Error al agregar usuario" };
+  }
+
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "invitar_usuario",
+    entity: "usuario",
+    entity_id: emailLimpio,
+    details: { nombre: nombreLimpio, permission, role },
+  });
+
+  revalidatePath("/perfil");
+  return { success: true, access_code: codigo };
+}
+
+export async function eliminarUsuario(email: string): Promise<ActionResult> {
+  const resultado = await verificarAdmin();
+  if (!resultado) return { success: false, error: "No tienes permisos" };
+
+  const { user } = resultado;
+  if (email === user.email) return { success: false, error: "No puedes eliminarte a ti mismo" };
+
+  const rl = await checkRateLimit({
+    key: `eliminar:${user.id}`,
+    maxAttempts: 5,
+    windowMinutes: 60,
+  });
+  if (!rl.allowed) {
+    return { success: false, error: `Demasiadas eliminaciones. Intenta de nuevo en ${rl.resetIn} minuto${rl.resetIn !== 1 ? "s" : ""}.` };
+  }
+
+  const admin = getAdminClient();
+
+  const { data: authUsers } = await admin.auth.admin.listUsers();
+  const authUser = authUsers?.users?.find((u) => u.email === email);
+
+  if (authUser) {
+    const { error: deleteAuthError } = await admin.auth.admin.deleteUser(authUser.id);
+    if (deleteAuthError) {
+      console.error("Error eliminando de auth:", deleteAuthError.message);
+      return { success: false, error: "Error al eliminar usuario" };
+    }
+  }
+
+  await admin.from("allowed_emails").delete().eq("email", email);
+  await admin.from("profiles").delete().eq("email", email);
+
+  await registrarAuditLog({
+    org_id: resultado.orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "eliminar_usuario",
+    entity: "usuario",
+    entity_id: email,
+  });
+
+  revalidatePath("/perfil");
+  return { success: true };
+}
+
+export async function cambiarPermisoUsuario(email: string, permission: "editor" | "viewer"): Promise<ActionResult> {
+  const resultado = await verificarAdmin();
+  if (!resultado) return { success: false, error: "No tienes permisos" };
+  const { user, orgId } = resultado;
+
+  if (email === user.email) {
+    return { success: false, error: "No puedes cambiar tu propio permiso" };
+  }
+
+  const admin = getAdminClient();
+
+  // Actualizar en allowed_emails
+  const { error: errorAllowed } = await admin
+    .from("allowed_emails")
+    .update({ permission })
+    .eq("email", email)
+    .eq("org_id", orgId);
+
+  if (errorAllowed) {
+    return { success: false, error: "Error al actualizar permisos" };
+  }
+
+  // Actualizar en profiles si el usuario ya está registrado
+  await admin
+    .from("profiles")
+    .update({ permission })
+    .eq("email", email)
+    .eq("org_id", orgId);
+
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "cambiar_permiso",
+    entity: "usuario",
+    entity_id: email,
+    details: { permission },
+  });
+
+  revalidatePath("/perfil");
+  return { success: true };
+}
+
+export async function cambiarRolUsuario(email: string, role: "admin" | "user"): Promise<ActionResult> {
+  const resultado = await verificarAdmin();
+  if (!resultado) return { success: false, error: "No tienes permisos" };
+  const { user, orgId } = resultado;
+
+  if (email === user.email) {
+    return { success: false, error: "No puedes cambiar tu propio rol" };
+  }
+
+  const admin = getAdminClient();
+
+  // Verificar que el usuario a cambiar no es owner
+  const { data: targetProfile } = await admin
+    .from("profiles")
+    .select("is_owner")
+    .eq("email", email)
+    .eq("org_id", orgId)
+    .single();
+
+  if (targetProfile?.is_owner) {
+    return { success: false, error: "No puedes cambiar el rol del propietario de la organización" };
+  }
+
+  const { error } = await admin
+    .from("profiles")
+    .update({ role })
+    .eq("email", email)
+    .eq("org_id", orgId);
+
+  if (error) return { success: false, error: "Error al cambiar rol" };
+
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "cambiar_rol",
+    entity: "usuario",
+    entity_id: email,
+    details: { role },
+  });
+
+  revalidatePath("/agregar-usuario");
+  return { success: true };
+}
+
+export async function transferirPropiedad(emailNuevoOwner: string): Promise<ActionResult> {
+  const resultado = await verificarAdmin();
+  if (!resultado) return { success: false, error: "No tienes permisos" };
+  const { user, orgId } = resultado;
+
+  const rl = await checkRateLimit({
+    key: `transferir:${user.id}`,
+    maxAttempts: 3,
+    windowMinutes: 60,
+  });
+  if (!rl.allowed) {
+    return { success: false, error: `Demasiados intentos. Intenta de nuevo en ${rl.resetIn} minuto${rl.resetIn !== 1 ? "s" : ""}.` };
+  }
+
+  const admin = getAdminClient();
+
+  // Verificar que el actual es owner
+  const { data: currentProfile } = await admin
+    .from("profiles")
+    .select("is_owner")
+    .eq("id", user.id)
+    .single();
+
+  if (!currentProfile?.is_owner) {
+    return { success: false, error: "Solo el propietario puede transferir la propiedad" };
+  }
+
+  // Transferir
+  await admin.from("profiles").update({ is_owner: false, role: "user" }).eq("id", user.id);
+  await admin.from("profiles").update({ is_owner: true, role: "admin" }).eq("email", emailNuevoOwner).eq("org_id", orgId);
+
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "transferir_propiedad",
+    entity: "usuario",
+    entity_id: emailNuevoOwner,
+  });
+
+  revalidatePath("/agregar-usuario");
+  return { success: true };
+}
+
+export async function cambiarPermisoExportar(email: string, can_export: boolean): Promise<ActionResult> {
+  const resultado = await verificarAdmin();
+  if (!resultado) return { success: false, error: "No tienes permisos" };
+  const { user, orgId } = resultado;
+
+  const admin = getAdminClient();
+
+  const { error } = await admin
+    .from("profiles")
+    .update({ can_export })
+    .eq("email", email)
+    .eq("org_id", orgId);
+
+  if (error) return { success: false, error: "Error al actualizar permiso de exportación" };
+
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: can_export ? "habilitar_exportacion" : "deshabilitar_exportacion",
+    entity: "usuario",
+    entity_id: email,
+  });
+
+  revalidatePath("/agregar-usuario");
+  return { success: true };
+}
+\n--- Archivo: app/actions/__tests__/invite.test.ts ---
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: vi.fn(),
+}));
+
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: vi.fn(),
+}));
+
+vi.mock("@/app/actions/rate-limit", () => ({
+  checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, remaining: 9, resetIn: 60 }),
+}));
+
+vi.mock("@/app/actions/audit", () => ({
+  registrarAuditLog: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+}));
+
+import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { invitarUsuario, eliminarUsuario, cambiarPermisoUsuario, cambiarRolUsuario, transferirPropiedad, cambiarPermisoExportar } from "../invite";
+
+function mockNoAdmin() {
+  (createClient as any).mockResolvedValue({
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ data: { user: { id: "u1", email: "a@a.com" } } }),
+    },
+    from: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: { role: "user", org_id: "org1" } }),
+    }),
+  });
+}
+
+function mockAdmin() {
+  (createClient as any).mockResolvedValue({
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ data: { user: { id: "u1", email: "admin@a.com" } } }),
+    },
+    from: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: { role: "admin", org_id: "org1" } }),
+    }),
+  });
+}
+
+function mockAdminClient() {
+  (createAdminClient as any).mockReturnValue({
+    from: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockResolvedValue({ error: null }),
+      update: vi.fn().mockReturnThis(),
+      delete: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+      single: vi.fn().mockResolvedValue({ data: null }),
+    }),
+    rpc: vi.fn().mockResolvedValue({ data: "ABCD1234", error: null }),
+    auth: { admin: { listUsers: vi.fn().mockResolvedValue({ data: { users: [] } }) } },
+  });
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
+});
+
+describe("invitarUsuario", () => {
+  it("rechaza si el usuario no es admin", async () => {
+    mockNoAdmin();
+    const res = await invitarUsuario("Juan", "juan@test.com");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("No tienes permisos");
+  });
+
+  it("rechaza si nombre o correo estan vacios", async () => {
+    mockAdmin();
+    mockAdminClient();
+    const res = await invitarUsuario("", "");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("Nombre y correo son obligatorios");
+  });
+
+  it("rechaza si el correo ya existe", async () => {
+    mockAdmin();
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: { id: "existing" } }),
+      }),
+      rpc: vi.fn(),
+    });
+    const res = await invitarUsuario("Juan", "juan@test.com");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("Este correo ya está registrado");
+  });
+
+  it("invita correctamente y retorna access_code", async () => {
+    mockAdmin();
+    const fromMock = {
+      select: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockResolvedValue({ error: null }),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+    };
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue(fromMock),
+      rpc: vi.fn().mockResolvedValue({ data: "ABCD1234", error: null }),
+    });
+    const res = await invitarUsuario("Juan", "juan@test.com", "editor", "user");
+    expect(res.success).toBe(true);
+    expect(res.access_code).toBe("ABCD1234");
+  });
+});
+
+describe("cambiarPermisoUsuario", () => {
+  it("rechaza si no es admin", async () => {
+    mockNoAdmin();
+    const res = await cambiarPermisoUsuario("otro@test.com", "viewer");
+    expect(res.success).toBe(false);
+  });
+
+  it("rechaza cambiar el propio permiso", async () => {
+    mockAdmin();
+    mockAdminClient();
+    const res = await cambiarPermisoUsuario("admin@a.com", "viewer");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("No puedes cambiar tu propio permiso");
+  });
+
+  it("actualiza permiso correctamente", async () => {
+    mockAdmin();
+    const chainMock = { error: null };
+    const eqMock = vi.fn().mockImplementation(() => ({ ...chainMock, eq: eqMock }));
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        update: vi.fn().mockReturnValue({ eq: eqMock }),
+        eq: eqMock,
+      }),
+    });
+    const res = await cambiarPermisoUsuario("otro@test.com", "viewer");
+    expect(res.success).toBe(true);
+  });
+});
+
+describe("cambiarRolUsuario", () => {
+  it("rechaza si no es admin", async () => {
+    mockNoAdmin();
+    const res = await cambiarRolUsuario("otro@test.com", "admin");
+    expect(res.success).toBe(false);
+  });
+
+  it("rechaza cambiar el propio rol", async () => {
+    mockAdmin();
+    mockAdminClient();
+    const res = await cambiarRolUsuario("admin@a.com", "user");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("No puedes cambiar tu propio rol");
+  });
+
+  it("rechaza cambiar rol del owner", async () => {
+    mockAdmin();
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { is_owner: true } }),
+        update: vi.fn().mockReturnThis(),
+      }),
+    });
+    const res = await cambiarRolUsuario("owner@test.com", "user");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("No puedes cambiar el rol del propietario de la organización");
+  });
+});
+
+describe("cambiarPermisoExportar", () => {
+  it("rechaza si no es admin", async () => {
+    mockNoAdmin();
+    const res = await cambiarPermisoExportar("otro@test.com", true);
+    expect(res.success).toBe(false);
+  });
+
+  it("habilita exportacion correctamente", async () => {
+    mockAdmin();
+    const eqMock = vi.fn().mockImplementation(() => ({ error: null, eq: eqMock }));
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        update: vi.fn().mockReturnValue({ eq: eqMock }),
+      }),
+    });
+    const res = await cambiarPermisoExportar("otro@test.com", true);
+    expect(res.success).toBe(true);
+  });
+
+  it("deshabilita exportacion correctamente", async () => {
+    mockAdmin();
+    const eqMock = vi.fn().mockImplementation(() => ({ error: null, eq: eqMock }));
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        update: vi.fn().mockReturnValue({ eq: eqMock }),
+      }),
+    });
+    const res = await cambiarPermisoExportar("otro@test.com", false);
+    expect(res.success).toBe(true);
+  });
+});
+
+// ─── invitarUsuario casos adicionales ────────────────────────────────────────
+
+describe("invitarUsuario - casos adicionales", () => {
+  it("normaliza el correo a lowercase", async () => {
+    mockAdmin();
+    const fromMock = {
+      select: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockResolvedValue({ error: null }),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+    };
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue(fromMock),
+      rpc: vi.fn().mockResolvedValue({ data: "ABCD1234", error: null }),
+    });
+    const res = await invitarUsuario("Juan", "JUAN@TEST.COM", "editor", "user");
+    expect(res.success).toBe(true);
+    const insertCall = fromMock.insert.mock.calls[0][0];
+    expect(insertCall.email).toBe("juan@test.com");
+  });
+
+  it("rechaza si falla la generacion del codigo", async () => {
+    mockAdmin();
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+      }),
+      rpc: vi.fn().mockResolvedValue({ data: null, error: { message: "rpc error" } }),
+    });
+    const res = await invitarUsuario("Juan", "juan@test.com");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("Error al generar código");
+  });
+
+  it("rechaza si falla el insert en allowed_emails", async () => {
+    mockAdmin();
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        insert: vi.fn().mockResolvedValue({ error: { message: "insert error" } }),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+      }),
+      rpc: vi.fn().mockResolvedValue({ data: "ABCD1234", error: null }),
+    });
+    const res = await invitarUsuario("Juan", "juan@test.com");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("Error al agregar usuario");
+  });
+});
+
+// ─── eliminarUsuario ──────────────────────────────────────────────────────────
+
+describe("eliminarUsuario", () => {
+  it("rechaza si no es admin", async () => {
+    mockNoAdmin();
+    const res = await eliminarUsuario("otro@test.com");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("No tienes permisos");
+  });
+
+  it("rechaza eliminar el propio usuario", async () => {
+    mockAdmin();
+    mockAdminClient();
+    const res = await eliminarUsuario("admin@a.com");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("No puedes eliminarte a ti mismo");
+  });
+
+  it("elimina usuario registrado correctamente", async () => {
+    mockAdmin();
+    const deleteAuthMock = vi.fn().mockResolvedValue({ error: null });
+    const deleteMock = vi.fn().mockReturnThis();
+    const eqMock = vi.fn().mockResolvedValue({ error: null });
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        delete: deleteMock,
+        eq: eqMock,
+      }),
+      auth: {
+        admin: {
+          listUsers: vi.fn().mockResolvedValue({
+            data: { users: [{ id: "u99", email: "otro@test.com" }] },
+          }),
+          deleteUser: deleteAuthMock,
+        },
+      },
+    });
+    const res = await eliminarUsuario("otro@test.com");
+    expect(res.success).toBe(true);
+    expect(deleteAuthMock).toHaveBeenCalledWith("u99");
+  });
+
+
+  it("retorna error si falla deleteUser en auth", async () => {
+    mockAdmin();
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        delete: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      }),
+      auth: {
+        admin: {
+          listUsers: vi.fn().mockResolvedValue({
+            data: { users: [{ id: "u99", email: "otro@test.com" }] },
+          }),
+          deleteUser: vi.fn().mockResolvedValue({ error: { message: "auth error" } }),
+        },
+      },
+    });
+    const res = await eliminarUsuario("otro@test.com");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("Error al eliminar usuario");
+  });
+
+  it("elimina usuario no registrado (solo en allowed_emails)", async () => {
+    mockAdmin();
+    const deleteMock = vi.fn().mockReturnThis();
+    const eqMock = vi.fn().mockResolvedValue({ error: null });
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        delete: deleteMock,
+        eq: eqMock,
+      }),
+      auth: {
+        admin: {
+          listUsers: vi.fn().mockResolvedValue({ data: { users: [] } }),
+          deleteUser: vi.fn(),
+        },
+      },
+    });
+    const res = await eliminarUsuario("pendiente@test.com");
+    expect(res.success).toBe(true);
+  });
+});
+
+// ─── cambiarRolUsuario - casos adicionales ────────────────────────────────────
+
+describe("cambiarRolUsuario - casos adicionales", () => {
+  it("actualiza rol correctamente cuando no es owner", async () => {
+    mockAdmin();
+    const eqMock = vi.fn().mockImplementation(() => ({ error: null, eq: eqMock }));
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { is_owner: false } }),
+        update: vi.fn().mockReturnValue({ eq: eqMock }),
+      }),
+    });
+    const res = await cambiarRolUsuario("otro@test.com", "admin");
+    expect(res.success).toBe(true);
+  });
+});
+
+// ─── transferirPropiedad ──────────────────────────────────────────────────────
+
+describe("transferirPropiedad", () => {
+  it("rechaza si no es admin", async () => {
+    mockNoAdmin();
+    const res = await transferirPropiedad("nuevo@test.com");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("No tienes permisos");
+  });
+
+  it("rechaza si el que ejecuta no es owner", async () => {
+    mockAdmin();
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { is_owner: false } }),
+      }),
+    });
+    const res = await transferirPropiedad("nuevo@test.com");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("Solo el propietario puede transferir la propiedad");
+  });
+
+  it("transfiere propiedad correctamente", async () => {
+    mockAdmin();
+    const eqMock = vi.fn().mockImplementation(() => ({ error: null, eq: eqMock }));
+    const updateMock = vi.fn().mockReturnValue({ eq: eqMock });
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockImplementation(() => ({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { is_owner: true } }),
+        update: updateMock,
+        insert: vi.fn().mockResolvedValue({ error: null }),
+        delete: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+      })),
+    });
+    const res = await transferirPropiedad("nuevo@test.com");
+    expect(res.success).toBe(true);
+  });
+});
+
+// ─── cambiarPermisoUsuario - error en Supabase ────────────────────────────────
+
+describe("cambiarPermisoUsuario - casos adicionales", () => {
+  it("retorna error si falla la actualizacion en Supabase", async () => {
+    mockAdmin();
+    const eqMock = vi.fn().mockImplementation(() => ({ error: { message: "db error" }, eq: eqMock }));
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        update: vi.fn().mockReturnValue({ eq: eqMock }),
+      }),
+    });
+    const res = await cambiarPermisoUsuario("otro@test.com", "viewer");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("Error al actualizar permisos");
+  });
+});
+
+// ─── Idempotencia ─────────────────────────────────────────────────────────────
+
+describe("idempotencia", () => {
+  it("eliminarUsuario dos veces no lanza error inesperado", async () => {
+    mockAdmin();
+    const deleteMock = vi.fn().mockReturnThis();
+    const eqMock = vi.fn().mockResolvedValue({ error: null });
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        delete: deleteMock,
+        eq: eqMock,
+      }),
+      auth: {
+        admin: {
+          listUsers: vi.fn().mockResolvedValue({ data: { users: [] } }),
+          deleteUser: vi.fn(),
+        },
+      },
+    });
+    const res1 = await eliminarUsuario("otro@test.com");
+    const res2 = await eliminarUsuario("otro@test.com");
+    expect(res1.success).toBe(true);
+    expect(res2.success).toBe(true);
+  });
+
+  it("transferirPropiedad ejecutada dos veces retorna error en la segunda", async () => {
+    mockAdmin();
+    const eqMock = vi.fn().mockImplementation(() => ({ error: null, eq: eqMock }));
+    const updateMock = vi.fn().mockReturnValue({ eq: eqMock });
+
+    // Primera ejecucion: es owner, transfiere OK
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockImplementation(() => ({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { is_owner: true } }),
+        update: updateMock,
+      })),
+    });
+    const res1 = await transferirPropiedad("nuevo@test.com");
+    expect(res1.success).toBe(true);
+
+    // Segunda ejecucion: ya no es owner
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockImplementation(() => ({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { is_owner: false } }),
+        update: updateMock,
+      })),
+    });
+    const res2 = await transferirPropiedad("nuevo@test.com");
+    expect(res2.success).toBe(false);
+    expect(res2.error).toBe("Solo el propietario puede transferir la propiedad");
+  });
+});
+\n--- Archivo: app/actions/documents.ts ---
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { registrarAuditLog } from "@/app/actions/audit";
+import { documentoSchema } from "@/lib/schemas/document";
+
+type ActionResult = {
+  success: boolean;
+  error?: string;
+  id?: string;
+};
+
+function getAdminClient() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+const TAMANO_MAXIMO_PDF = 15 * 1024 * 1024; // 15 MB
+
+// ─── Helper: obtiene user + org_id en una sola llamada ───────────────────────
+async function getUserAndOrg() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("org_id, permission, role")
+    .eq("id", user.id)
+    .single();
+
+  // Sin org_id el usuario no puede operar documentos
+  if (!profile?.org_id) {
+    return { user, orgId: null as string | null, permission: "viewer" as const, role: "user" as const };
+  }
+
+  return {
+    user,
+    orgId: profile.org_id as string,
+    permission: (profile.permission || "editor") as "editor" | "viewer",
+    role: (profile.role || "user") as string,
+  };
+}
+
+// Helper: verificar si el usuario puede modificar documentos
+function puedeModificar(permission: string, role: string): boolean {
+  return role === "admin" || permission === "editor";
+}
+
+// ─── PDF upload ──────────────────────────────────────────────────────────────
+async function subirPdf(archivo: File, documentId: string, userId: string) {
+  if (archivo.size > TAMANO_MAXIMO_PDF) {
+    return { error: "El PDF no puede superar 15 MB" };
+  }
+  if (archivo.type !== "application/pdf") {
+    return { error: "Solo se permiten archivos PDF" };
+  }
+  // Verificar magic bytes — los primeros 5 bytes de un PDF real son "%PDF-"
+  const buffer = await archivo.arrayBuffer();
+  const bytes = new Uint8Array(buffer.slice(0, 5));
+  const magic = String.fromCharCode(...bytes);
+  if (!magic.startsWith("%PDF")) {
+    return { error: "El archivo no es un PDF válido" };
+  }
+
+  const admin = getAdminClient();
+  const extension = archivo.name.split(".").pop() ?? "pdf";
+  const ruta = `${userId}/${documentId}.${extension}`;
+
+  const { error } = await admin.storage
+    .from("documents-pdfs")
+    .upload(ruta, archivo, { upsert: true });
+
+  if (error) {
+    console.error("Error al subir PDF:", error.message);
+    return { error: "Error al subir el PDF" };
+  }
+
+  return {
+    pdf_url: ruta,
+    pdf_filename: archivo.name,
+    pdf_size_bytes: archivo.size,
+  };
+}
+
+// ─── Crear documento ─────────────────────────────────────────────────────────
+export async function crearDocumento(formData: FormData): Promise<ActionResult> {
+  const { user, orgId, permission, role } = await getUserAndOrg();
+
+  if (!orgId) {
+    return { success: false, error: "Tu cuenta no está asociada a ninguna organización." };
+  }
+
+  if (!puedeModificar(permission, role)) {
+    return { success: false, error: "No tienes permiso para crear documentos." };
+  }
+
+  const resultado = documentoSchema.safeParse({
+    type: formData.get("type"),
+    document_id: formData.get("document_id") || null,
+    description: formData.get("description"),
+    signed_by: formData.get("signed_by") || null,
+    addressed_to: formData.get("addressed_to") || null,
+    document_date: formData.get("document_date"),
+  });
+
+  if (!resultado.success) {
+    return { success: false, error: resultado.error.issues[0].message };
+  }
+
+  const admin = getAdminClient();
+  const { data, error } = await admin
+    .from("documents")
+    .insert({
+      ...resultado.data,
+      created_by: user.id,
+      org_id: orgId,           // ← vincula a la organización
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    console.error("Error al crear documento:", error.message);
+    return { success: false, error: "Error al guardar el documento" };
+  }
+
+  const archivoPdf = formData.get("pdf") as File | null;
+  if (archivoPdf && archivoPdf.size > 0) {
+    const resPdf = await subirPdf(archivoPdf, data.id, user.id);
+    if (resPdf.error) {
+      return { success: false, error: resPdf.error };
+    }
+    await admin
+      .from("documents")
+      .update({
+        pdf_url: resPdf.pdf_url,
+        pdf_filename: resPdf.pdf_filename,
+        pdf_size_bytes: resPdf.pdf_size_bytes,
+      })
+      .eq("id", data.id);
+  }
+
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "crear_documento",
+    entity: "documento",
+    entity_id: resultado.data.document_id ?? data.id,
+    details: { type: resultado.data.type, uuid: data.id },
+  });
+
+  revalidatePath("/documentos");
+  revalidatePath("/dashboard");
+  return { success: true, id: data.id };
+}
+
+// ─── Actualizar documento ────────────────────────────────────────────────────
+export async function actualizarDocumento(
+  id: string,
+  formData: FormData
+): Promise<ActionResult> {
+  const { user, orgId, permission, role } = await getUserAndOrg();
+
+  if (!orgId) {
+    return { success: false, error: "Tu cuenta no está asociada a ninguna organización." };
+  }
+
+  if (!puedeModificar(permission, role)) {
+    return { success: false, error: "No tienes permiso para editar documentos. Solicítaselo al administrador." };
+  }
+
+  const resultado = documentoSchema.safeParse({
+    type: formData.get("type"),
+    document_id: formData.get("document_id") || null,
+    description: formData.get("description"),
+    signed_by: formData.get("signed_by") || null,
+    addressed_to: formData.get("addressed_to") || null,
+    document_date: formData.get("document_date"),
+  });
+
+  if (!resultado.success) {
+    return { success: false, error: resultado.error.issues[0].message };
+  }
+
+  const admin = getAdminClient();
+
+  const archivoPdf = formData.get("pdf") as File | null;
+  let datosPdf = {};
+
+  if (archivoPdf && archivoPdf.size > 0) {
+    const resPdf = await subirPdf(archivoPdf, id, user.id);
+    if (resPdf.error) {
+      return { success: false, error: resPdf.error };
+    }
+    datosPdf = {
+      pdf_url: resPdf.pdf_url,
+      pdf_filename: resPdf.pdf_filename,
+      pdf_size_bytes: resPdf.pdf_size_bytes,
+    };
+  }
+
+  const { error } = await admin
+    .from("documents")
+    .update({ ...resultado.data, ...datosPdf, updated_by: user.id })
+    .eq("id", id)
+    .eq("org_id", orgId)       // ← solo puede editar docs de su org
+    .is("deleted_at", null);
+
+  if (error) {
+    console.error("Error al actualizar documento:", error.message);
+    return { success: false, error: "Error al actualizar el documento" };
+  }
+
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "actualizar_documento",
+    entity: "documento",
+    entity_id: resultado.data.document_id ?? id,
+    details: { type: resultado.data.type, uuid: id },
+  });
+
+  revalidatePath("/documentos");
+  revalidatePath(`/documentos/${id}`);
+  revalidatePath("/dashboard");
+  return { success: true, id };
+}
+
+// ─── Eliminar documento (borrado lógico) ─────────────────────────────────────
+export async function eliminarDocumento(id: string): Promise<ActionResult> {
+  const { user, orgId, permission, role } = await getUserAndOrg();
+
+  if (!orgId) {
+    return { success: false, error: "Tu cuenta no está asociada a ninguna organización." };
+  }
+
+  if (!puedeModificar(permission, role)) {
+    return { success: false, error: "No tienes permiso para eliminar documentos." };
+  }
+
+  const admin = getAdminClient();
+
+  // Obtener document_id antes de borrar para el log
+  const { data: docInfo } = await admin
+    .from("documents")
+    .select("document_id")
+    .eq("id", id)
+    .single();
+
+  const { error } = await admin
+    .from("documents")
+    .update({ deleted_at: new Date().toISOString(), updated_by: user.id })
+    .eq("id", id)
+    .eq("org_id", orgId)
+    .is("deleted_at", null);
+
+  if (error) {
+    console.error("Error al eliminar documento:", error.message);
+    return { success: false, error: "Error al eliminar el documento" };
+  }
+
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "eliminar_documento",
+    entity: "documento",
+    entity_id: docInfo?.document_id ?? id,
+    details: { uuid: id },
+  });
+
+  revalidatePath("/documentos");
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
+// ─── Eliminar todos los documentos de un tipo ────────────────────────────────
+export async function eliminarTodosDocumentos(
+  tipo: "recibido" | "enviado"
+): Promise<ActionResult> {
+  const { user, orgId, role } = await getUserAndOrg();
+
+  if (!orgId) {
+    return { success: false, error: "Tu cuenta no está asociada a ninguna organización." };
+  }
+
+  if (role !== "admin") {
+    return { success: false, error: "Solo el administrador puede eliminar todos los documentos." };
+  }
+
+  const admin = getAdminClient();
+  const { error } = await admin
+    .from("documents")
+    .update({ deleted_at: new Date().toISOString(), updated_by: user.id })
+    .eq("type", tipo)
+    .eq("org_id", orgId)       // ← CRÍTICO: solo borra los de su org
+    .is("deleted_at", null);
+
+  if (error) {
+    console.error("Error al eliminar todos:", error.message);
+    return { success: false, error: "Error al eliminar los documentos" };
+  }
+
+  await registrarAuditLog({
+    org_id: orgId,
+    user_id: user.id,
+    user_email: user.email!,
+    action: "eliminar_todos_documentos",
+    entity: "documento",
+    details: { tipo: tipo },
+  });
+
+  revalidatePath("/documentos");
+  revalidatePath("/dashboard");
+  return { success: true };
+}\n--- Archivo: app/actions/__tests__/import-export.test.ts ---
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: vi.fn(),
+}));
+
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+  redirect: vi.fn().mockImplementation((url: string) => {
+    throw new Error("REDIRECT:" + url);
+  }),
+}));
+
+import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { redirect } from "next/navigation";
+import { importarDocumentos, obtenerDocumentosParaExportar } from "../import-export";
+
+const FILAS_MOCK = [
+  {
+    document_id: "N-001",
+    description: "Nota de prueba",
+    signed_by: "Juan Perez",
+    addressed_to: "Departamento A",
+    document_date: "2025-01-15",
+  },
+  {
+    document_id: "N-002",
+    description: "Otra nota",
+    signed_by: "Maria Lopez",
+    addressed_to: "Departamento B",
+    document_date: "2025-01-16",
+  },
+];
+
+function mockUsuarioAutenticado() {
+  (createClient as any).mockResolvedValue({
+    auth: {
+      getUser: vi.fn().mockResolvedValue({
+        data: { user: { id: "user-123", email: "user@test.com" } },
+      }),
+    },
+    from: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      is: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
+      order: vi.fn().mockResolvedValue({ data: [], error: null }),
+    }),
+  });
+}
+
+function mockUsuarioNoAutenticado() {
+  (createClient as any).mockResolvedValue({
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
+    },
+  });
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
+});
+
+// ─── importarDocumentos ───────────────────────────────────────────────────────
+
+describe("importarDocumentos", () => {
+  it("redirige a login si no hay usuario autenticado", async () => {
+    mockUsuarioNoAutenticado();
+    await expect(importarDocumentos("recibido", FILAS_MOCK)).rejects.toThrow("REDIRECT:/login");
+  });
+
+  it("rechaza si no hay filas para importar", async () => {
+    mockUsuarioAutenticado();
+    const res = await importarDocumentos("recibido", []);
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("No hay filas para importar");
+  });
+
+  it("importa documentos recibidos correctamente", async () => {
+    mockUsuarioAutenticado();
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        insert: vi.fn().mockResolvedValue({ error: null }),
+      }),
+    });
+    const res = await importarDocumentos("recibido", FILAS_MOCK);
+    expect(res.success).toBe(true);
+    expect(res.importados).toBe(2);
+  });
+
+  it("importa documentos enviados correctamente", async () => {
+    mockUsuarioAutenticado();
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        insert: vi.fn().mockResolvedValue({ error: null }),
+      }),
+    });
+    const res = await importarDocumentos("enviado", FILAS_MOCK);
+    expect(res.success).toBe(true);
+    expect(res.importados).toBe(2);
+  });
+
+  it("asigna el tipo correcto a cada registro", async () => {
+    mockUsuarioAutenticado();
+    const insertMock = vi.fn().mockResolvedValue({ error: null });
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({ insert: insertMock }),
+    });
+    await importarDocumentos("enviado", FILAS_MOCK);
+    const registros = insertMock.mock.calls[0][0];
+    expect(registros.every((r: any) => r.type === "enviado")).toBe(true);
+  });
+
+  it("asigna created_by con el id del usuario autenticado", async () => {
+    mockUsuarioAutenticado();
+    const insertMock = vi.fn().mockResolvedValue({ error: null });
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({ insert: insertMock }),
+    });
+    await importarDocumentos("recibido", FILAS_MOCK);
+    const registros = insertMock.mock.calls[0][0];
+    expect(registros.every((r: any) => r.created_by === "user-123")).toBe(true);
+  });
+
+  it("retorna error si falla el insert en Supabase", async () => {
+    mockUsuarioAutenticado();
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        insert: vi.fn().mockResolvedValue({ error: { message: "db error" } }),
+      }),
+    });
+    const res = await importarDocumentos("recibido", FILAS_MOCK);
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("Error al importar los documentos");
+  });
+
+  it("importa una sola fila correctamente", async () => {
+    mockUsuarioAutenticado();
+    (createAdminClient as any).mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        insert: vi.fn().mockResolvedValue({ error: null }),
+      }),
+    });
+    const res = await importarDocumentos("recibido", [FILAS_MOCK[0]]);
+    expect(res.success).toBe(true);
+    expect(res.importados).toBe(1);
+  });
+});
+
+// ─── obtenerDocumentosParaExportar ────────────────────────────────────────────
+
+describe("obtenerDocumentosParaExportar", () => {
+  it("redirige a login si no hay usuario autenticado", async () => {
+    mockUsuarioNoAutenticado();
+    await expect(obtenerDocumentosParaExportar("recibido")).rejects.toThrow("REDIRECT:/login");
+  });
+
+  it("retorna documentos recibidos correctamente", async () => {
+    const docs = [
+      { document_id: "N-001", description: "Nota 1", signed_by: "Juan", addressed_to: "Dep A", document_date: "2025-01-15", pdf_url: null },
+      { document_id: "N-002", description: "Nota 2", signed_by: "Maria", addressed_to: "Dep B", document_date: "2025-01-16", pdf_url: "https://url.com/doc.pdf" },
+    ];
+    (createClient as any).mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-123" } } }),
+      },
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        is: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
+        order: vi.fn().mockResolvedValue({ data: docs, error: null }),
+      }),
+    });
+    const res = await obtenerDocumentosParaExportar("recibido");
+    expect(res.success).toBe(true);
+    expect(res.documentos).toHaveLength(2);
+    expect(res.documentos[0].document_id).toBe("N-001");
+  });
+
+  it("retorna array vacio si no hay documentos", async () => {
+    (createClient as any).mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-123" } } }),
+      },
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        is: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
+        order: vi.fn().mockResolvedValue({ data: null, error: null }),
+      }),
+    });
+    const res = await obtenerDocumentosParaExportar("enviado");
+    expect(res.success).toBe(true);
+    expect(res.documentos).toEqual([]);
+  });
+
+  it("retorna error si falla la consulta a Supabase", async () => {
+    (createClient as any).mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-123" } } }),
+      },
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        is: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
+        order: vi.fn().mockResolvedValue({ data: null, error: { message: "db error" } }),
+      }),
+    });
+    const res = await obtenerDocumentosParaExportar("recibido");
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("Error al obtener los documentos");
+    expect(res.documentos).toEqual([]);
+  });
+
+  it("no mezcla documentos enviados con recibidos", async () => {
+    const docs = [
+      { document_id: "E-001", description: "Enviado 1", signed_by: "Juan", addressed_to: "Dep A", document_date: "2025-01-15", pdf_url: null },
+    ];
+    let capturedEqArgs: any[] = [];
+    (createClient as any).mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-123" } } }),
+      },
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
+        eq: vi.fn().mockImplementation((col: string, val: string) => {
+          capturedEqArgs.push({ col, val });
+          return {
+            eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
+            order: vi.fn().mockResolvedValue({ data: docs, error: null }),
+          };
+        }),
+        is: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: docs, error: null }),
+      }),
+    });
+    await obtenerDocumentosParaExportar("enviado");
+    expect(capturedEqArgs.some((a) => a.val === "enviado")).toBe(true);
+  });
+});
+\n--- Archivo: app/actions/import-export.ts ---
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { redirect } from "next/navigation";
+import { registrarAuditLog } from "@/app/actions/audit";
+
+type ActionResult = {
+  success: boolean;
+  error?: string;
+  importados?: number;
+};
+
+function getAdminClient() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+interface FilaImportar {
+  document_id: string | null;
+  description: string;
+  signed_by: string | null;
+  addressed_to: string | null;
+  document_date: string;
+}
+
+export async function importarDocumentos(
+  tipo: "recibido" | "enviado",
+  filas: FilaImportar[]
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  if (filas.length === 0) {
+    return { success: false, error: "No hay filas para importar" };
+  }
+
+  const registros = filas.map((fila) => ({
+    type: tipo,
+    document_id: fila.document_id,
+    description: fila.description,
+    signed_by: fila.signed_by,
+    addressed_to: fila.addressed_to,
+    document_date: fila.document_date,
+    created_by: user.id,
+  }));
+
+  const admin = getAdminClient();
+  const { error } = await admin.from("documents").insert(registros);
+
+  if (error) {
+    console.error("Error al importar documentos:", error.message);
+    return { success: false, error: "Error al importar los documentos" };
+  }
+
+  return { success: true, importados: registros.length };
+}
+
+export async function obtenerDocumentosParaExportar(tipo: "recibido" | "enviado") {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data, error } = await supabase
+    .from("documents")
+    .select("document_id, description, signed_by, addressed_to, document_date, pdf_url")
+    .eq("type", tipo)
+    .is("deleted_at", null)
+    .order("document_date", { ascending: false });
+
+  if (error) {
+    console.error("Error al obtener documentos:", error.message);
+    return { success: false, error: "Error al obtener los documentos", documentos: [] };
+  }
+
+  const { data: perfil } = await supabase.from("profiles").select("org_id, email").eq("id", user.id).single();
+  if (perfil) {
+    await registrarAuditLog({
+      org_id: perfil.org_id,
+      user_id: user.id,
+      user_email: perfil.email,
+      action: "exportar_documentos",
+      entity: "documento",
+      details: { tipo, cantidad: data?.length ?? 0 },
+    });
+  }
+
+  return { success: true, documentos: data ?? [] };
+}
+\n--- Archivo: app/actions/auth.ts ---
+"use server";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  email: z.string().email("Ingresa un correo válido"),
+  password: z.string().min(1, "La contraseña es obligatoria"),
+});
+
+export async function login(formData: FormData) {
+  const result = loginSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+
+  if (!result.success) {
+    return { error: "Correo o contraseña incorrectos" };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword(result.data);
+
+  if (error) {
+    return { error: "Correo o contraseña incorrectos" };
+  }
+
+  // Verificar nivel de autenticación actual
+  const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  const currentLevel = aalData?.currentLevel;
+  const nextLevel = aalData?.nextLevel;
+
+  // Si ya está en aal2, no necesita verificar 2FA
+  if (currentLevel === "aal2") {
+    redirect("/dashboard");
+  }
+
+  // Si necesita subir a aal2 (tiene MFA configurado)
+  if (nextLevel === "aal2") {
+    const { data: factors } = await supabase.auth.mfa.listFactors();
+    const factorId = factors?.totp?.[0]?.id;
+    redirect(`/verificar-2fa?factorId=${factorId}`);
+  }
+
+  // No tiene MFA configurado — mandarlo a configurar
+  redirect("/configurar-2fa");
+}
+
+export async function signOut() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
+}
+
+const registroSchema = z.object({
+  email: z.string().email("Ingresa un correo válido"),
+  password: z.string().min(12, "La contraseña debe tener al menos 12 caracteres"),
+  full_name: z.string().min(1, "El nombre es obligatorio").max(200),
+});
+
+export async function registro(formData: FormData) {
+  const result = registroSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+    full_name: formData.get("full_name"),
+  });
+
+  if (!result.success) {
+    return { error: result.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signUp({
+    email: result.data.email,
+    password: result.data.password,
+    options: {
+      data: { full_name: result.data.full_name },
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+    },
+  });
+
+  if (error) {
+    if (error.message.includes("no está autorizado")) {
+      return { error: "Este correo no tiene acceso. Pide a un usuario que te invite." };
+    }
+    if (error.message.includes("already registered") || error.message.includes("User already registered")) {
+      return { error: "Este correo ya tiene una cuenta. Inicia sesión directamente." };
+    }
+    return { error: "No se pudo crear la cuenta. Verifica los datos." };
+  }
+
+  return { success: true };
+}
+
+export async function verificarCodigoAcceso(codigo: string): Promise<{ valido: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, email")
+    .eq("access_code", codigo.trim().toUpperCase())
+    .maybeSingle();
+
+  if (!data) {
+    return { valido: false, error: "Código de acceso inválido" };
+  }
+  return { valido: true };
+}
+\n--- Archivo: app/actions/audit.ts ---
+"use server";
+
+import { createClient as createAdminClient } from "@supabase/supabase-js";
+
+function getAdminClient() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+interface AuditLogParams {
+  org_id: string;
+  user_id: string;
+  user_email: string;
+  action: string;
+  entity: string;
+  entity_id?: string;
+  details?: Record<string, unknown>;
+}
+
+export async function registrarAuditLog(params: AuditLogParams) {
+  try {
+    const admin = getAdminClient();
+    const { error } = await admin.from("audit_logs").insert(params);
+    if (error) {
+      console.error("Error insertando audit log:", JSON.stringify(error));
+    } else {
+      console.log("Audit log registrado:", params.action);
+    }
+  } catch (err) {
+    console.error("Error registrando audit log:", err);
+  }
+}
+\n--- Archivo: app/actions/notifications.ts ---
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { revalidatePath } from "next/cache";
+
+function getAdminClient() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+export async function marcarTodasLeidas() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "No autenticado" };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("org_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.org_id) return { success: false, error: "Sin organización" };
+
+  const admin = getAdminClient();
+  const { error } = await admin
+    .from("notifications")
+    .update({ read: true })
+    .eq("org_id", profile.org_id)
+    .eq("read", false);
+
+  if (error) {
+    console.error("marcarTodasLeidas:", error.message);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function marcarUnaLeida(id: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "No autenticado" };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("org_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.org_id) return { success: false, error: "Sin organización" };
+
+  const admin = getAdminClient();
+  const { error } = await admin
+    .from("notifications")
+    .update({ read: true })
+    .eq("id", id)
+    .eq("org_id", profile.org_id);
+
+  if (error) {
+    console.error("marcarUnaLeida:", error.message);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function limpiarLeidas() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "No autenticado" };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("org_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.org_id) return { success: false, error: "Sin organización" };
+
+  const admin = getAdminClient();
+  const { error } = await admin
+    .from("notifications")
+    .delete()
+    .eq("org_id", profile.org_id)
+    .eq("read", true);
+
+  if (error) {
+    console.error("limpiarLeidas:", error.message);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/");
+  return { success: true };
+}
+\n--- Archivo: app/actions/rate-limit.ts ---
+"use server";
+
+import { createClient as createAdminClient } from "@supabase/supabase-js";
+
+function getAdminClient() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+interface RateLimitConfig {
+  key: string;        // identificador único (ej: "invitar:user@email.com")
+  maxAttempts: number; // máximo de intentos permitidos
+  windowMinutes: number; // ventana de tiempo en minutos
+}
+
+interface RateLimitResult {
+  allowed: boolean;
+  remaining: number;
+  resetIn: number; // minutos hasta que se resetea
+}
+
+export async function checkRateLimit(config: RateLimitConfig): Promise<RateLimitResult> {
+  const admin = getAdminClient();
+  const windowStart = new Date(Date.now() - config.windowMinutes * 60 * 1000).toISOString();
+
+  try {
+    // Limpiar entradas viejas
+    await admin.from("rate_limits").delete().lt("window_start", windowStart);
+
+    // Buscar intentos en la ventana actual
+    const { data } = await admin
+      .from("rate_limits")
+      .select("id, attempts, window_start")
+      .eq("key", config.key)
+      .gte("window_start", windowStart)
+      .order("window_start", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!data) {
+      // Primera vez — crear registro
+      await admin.from("rate_limits").insert({ key: config.key, attempts: 1 });
+      return { allowed: true, remaining: config.maxAttempts - 1, resetIn: config.windowMinutes };
+    }
+
+    if (data.attempts >= config.maxAttempts) {
+      const resetAt = new Date(data.window_start).getTime() + config.windowMinutes * 60 * 1000;
+      const resetIn = Math.ceil((resetAt - Date.now()) / 60000);
+      return { allowed: false, remaining: 0, resetIn: Math.max(1, resetIn) };
+    }
+
+    // Incrementar intentos
+    await admin.from("rate_limits").update({ attempts: data.attempts + 1 }).eq("id", data.id);
+    return { allowed: true, remaining: config.maxAttempts - data.attempts - 1, resetIn: config.windowMinutes };
+
+  } catch (err) {
+    console.error("Rate limit error:", err);
+    // Si falla el rate limit, permitir la operación para no bloquear usuarios legítimos
+    return { allowed: true, remaining: 0, resetIn: 0 };
+  }
+}
+\n--- Archivo: app/api/cron/check-storage/route.ts ---
+import { createClient } from "@supabase/supabase-js";
+import { NextResponse } from "next/server";
+
+export const runtime = "edge";
+
+export async function GET(request: Request) {
+  const authHeader = request.headers.get("authorization");
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { error } = await supabase.rpc("check_storage_usage");
+
+  if (error) {
+    console.error("Error checking storage:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true, timestamp: new Date().toISOString() });
+}
+\n--- Archivo: lib/supabase/client.ts ---
+import { createBrowserClient } from "@supabase/ssr";
+
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
+\n--- Archivo: lib/supabase/server.ts ---
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+export async function createClient() {
+  const cookieStore = await cookies();
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // Server Component — ignorar
+          }
+        },
+      },
+    }
+  );
+}
+\n--- Archivo: lib/supabase/middleware.ts ---
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+
+export async function updateSession(request: NextRequest) {
+  let response = NextResponse.next({ request });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          response = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const path = request.nextUrl.pathname;
+
+  const isAuthRoute =
+    path.startsWith("/login") ||
+    path.startsWith("/registro") ||
+    path.startsWith("/recuperar-contrasena") ||
+    path.startsWith("/actualizar-contrasena");
+
+  const is2FARoute =
+    path.startsWith("/verificar-2fa") ||
+    path.startsWith("/configurar-2fa");
+
+  const isPublicRoute = isAuthRoute || path.startsWith("/auth/callback");
+
+  // No autenticado → redirigir a login
+  if (!user && !isPublicRoute && !is2FARoute) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // Autenticado entrando a páginas de auth → verificar AAL
+  if (user && isAuthRoute) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  // Usuario autenticado — verificar nivel MFA
+  if (user && !is2FARoute && !isPublicRoute) {
+    const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    const currentLevel = aalData?.currentLevel;
+    const nextLevel = aalData?.nextLevel;
+
+    // Necesita verificar 2FA pero no lo ha hecho en esta sesión
+    if (nextLevel === "aal2" && currentLevel === "aal1") {
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      const factorId = factors?.totp?.[0]?.id;
+      if (factorId) {
+        return NextResponse.redirect(
+          new URL(`/verificar-2fa?factorId=${factorId}`, request.url)
+        );
+      }
+    }
+  }
+
+  return response;
+}

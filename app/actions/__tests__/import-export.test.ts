@@ -14,9 +14,12 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
+vi.mock("@/app/actions/audit", () => ({
+  registrarAuditLog: vi.fn().mockResolvedValue(null),
+}));
+
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
-import { redirect } from "next/navigation";
 import { importarDocumentos, obtenerDocumentosParaExportar } from "../import-export";
 
 const FILAS_MOCK = [
@@ -36,21 +39,40 @@ const FILAS_MOCK = [
   },
 ];
 
-function mockUsuarioAutenticado() {
+// Helper dinámico para interceptar llamadas por tabla
+function mockSupabaseMultiTenant(options: { documentData?: any; documentError?: any } = {}) {
+  const mockFrom = vi.fn().mockImplementation((tabla: string) => {
+    if (tabla === "profiles") {
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
+      };
+    }
+    if (tabla === "documents") {
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        is: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ 
+          data: options.documentData ?? [], 
+          error: options.documentError ?? null 
+        }),
+      };
+    }
+    return {};
+  });
+
   (createClient as any).mockResolvedValue({
     auth: {
       getUser: vi.fn().mockResolvedValue({
         data: { user: { id: "user-123", email: "user@test.com" } },
       }),
     },
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      is: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
-      order: vi.fn().mockResolvedValue({ data: [], error: null }),
-    }),
+    from: mockFrom,
   });
+
+  return mockFrom;
 }
 
 function mockUsuarioNoAutenticado() {
@@ -76,80 +98,52 @@ describe("importarDocumentos", () => {
   });
 
   it("rechaza si no hay filas para importar", async () => {
-    mockUsuarioAutenticado();
+    mockSupabaseMultiTenant();
     const res = await importarDocumentos("recibido", []);
     expect(res.success).toBe(false);
     expect(res.error).toBe("No hay filas para importar");
   });
 
-  it("importa documentos recibidos correctamente", async () => {
-    mockUsuarioAutenticado();
+  it("importa documentos recibidos e inyecta el org_id de forma mandatoria", async () => {
+    mockSupabaseMultiTenant();
+    const insertMock = vi.fn().mockResolvedValue({ error: null });
     (createAdminClient as any).mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        insert: vi.fn().mockResolvedValue({ error: null }),
-      }),
+      from: vi.fn().mockReturnValue({ insert: insertMock }),
     });
+
     const res = await importarDocumentos("recibido", FILAS_MOCK);
     expect(res.success).toBe(true);
     expect(res.importados).toBe(2);
+
+    // Asegurar aislamiento Multi-Tenant en la inserción masiva
+    const registrosInsertados = insertMock.mock.calls[0][0];
+    expect(registrosInsertados.every((r: any) => r.org_id === "org-123")).toBe(true);
   });
 
-  it("importa documentos enviados correctamente", async () => {
-    mockUsuarioAutenticado();
-    (createAdminClient as any).mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        insert: vi.fn().mockResolvedValue({ error: null }),
-      }),
-    });
-    const res = await importarDocumentos("enviado", FILAS_MOCK);
-    expect(res.success).toBe(true);
-    expect(res.importados).toBe(2);
-  });
-
-  it("asigna el tipo correcto a cada registro", async () => {
-    mockUsuarioAutenticado();
+  it("asigna el tipo correcto y el autor original a cada registro del lote", async () => {
+    mockSupabaseMultiTenant();
     const insertMock = vi.fn().mockResolvedValue({ error: null });
     (createAdminClient as any).mockReturnValue({
       from: vi.fn().mockReturnValue({ insert: insertMock }),
     });
+
     await importarDocumentos("enviado", FILAS_MOCK);
     const registros = insertMock.mock.calls[0][0];
     expect(registros.every((r: any) => r.type === "enviado")).toBe(true);
-  });
-
-  it("asigna created_by con el id del usuario autenticado", async () => {
-    mockUsuarioAutenticado();
-    const insertMock = vi.fn().mockResolvedValue({ error: null });
-    (createAdminClient as any).mockReturnValue({
-      from: vi.fn().mockReturnValue({ insert: insertMock }),
-    });
-    await importarDocumentos("recibido", FILAS_MOCK);
-    const registros = insertMock.mock.calls[0][0];
     expect(registros.every((r: any) => r.created_by === "user-123")).toBe(true);
   });
 
-  it("retorna error si falla el insert en Supabase", async () => {
-    mockUsuarioAutenticado();
+  it("retorna error si falla el insert administrativo de Supabase", async () => {
+    mockSupabaseMultiTenant();
     (createAdminClient as any).mockReturnValue({
       from: vi.fn().mockReturnValue({
         insert: vi.fn().mockResolvedValue({ error: { message: "db error" } }),
       }),
     });
+
     const res = await importarDocumentos("recibido", FILAS_MOCK);
     expect(res.success).toBe(false);
     expect(res.error).toBe("Error al importar los documentos");
-  });
-
-  it("importa una sola fila correctamente", async () => {
-    mockUsuarioAutenticado();
-    (createAdminClient as any).mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        insert: vi.fn().mockResolvedValue({ error: null }),
-      }),
-    });
-    const res = await importarDocumentos("recibido", [FILAS_MOCK[0]]);
-    expect(res.success).toBe(true);
-    expect(res.importados).toBe(1);
   });
 });
 
@@ -161,92 +155,60 @@ describe("obtenerDocumentosParaExportar", () => {
     await expect(obtenerDocumentosParaExportar("recibido")).rejects.toThrow("REDIRECT:/login");
   });
 
-  it("retorna documentos recibidos correctamente", async () => {
+  it("restringe la exportación estrictamente al tenant (org_id) del usuario", async () => {
     const docs = [
       { document_id: "N-001", description: "Nota 1", signed_by: "Juan", addressed_to: "Dep A", document_date: "2025-01-15", pdf_url: null },
-      { document_id: "N-002", description: "Nota 2", signed_by: "Maria", addressed_to: "Dep B", document_date: "2025-01-16", pdf_url: "https://url.com/doc.pdf" },
     ];
+    
+    const eqMock = vi.fn().mockReturnThis();
+    const isMock = vi.fn().mockReturnThis();
+    const orderMock = vi.fn().mockResolvedValue({ data: docs, error: null });
+
     (createClient as any).mockResolvedValue({
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-123" } } }),
       },
-      from: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        is: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
-        order: vi.fn().mockResolvedValue({ data: docs, error: null }),
+      from: vi.fn().mockImplementation((tabla: string) => {
+        if (tabla === "profiles") {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
+          };
+        }
+        if (tabla === "documents") {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: eqMock,
+            is: isMock,
+            order: orderMock,
+          };
+        }
+        return {};
       }),
     });
+
     const res = await obtenerDocumentosParaExportar("recibido");
     expect(res.success).toBe(true);
-    expect(res.documentos).toHaveLength(2);
-    expect(res.documentos[0].document_id).toBe("N-001");
+    expect(res.documentos).toHaveLength(1);
+
+    // ─── AQUÍ ESTÁ LA CORRECCIÓN ───────────────────────────────────────────
+    expect(eqMock).toHaveBeenCalledWith("type", "recibido");
+    expect(eqMock).toHaveBeenCalledWith("org_id", "org-123"); // Garantiza aislamiento
   });
 
-  it("retorna array vacio si no hay documentos", async () => {
-    (createClient as any).mockResolvedValue({
-      auth: {
-        getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-123" } } }),
-      },
-      from: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        is: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
-        order: vi.fn().mockResolvedValue({ data: null, error: null }),
-      }),
-    });
+  it("retorna un array vacío si el tenant no contiene documentos del tipo solicitado", async () => {
+    mockSupabaseMultiTenant({ documentData: null });
     const res = await obtenerDocumentosParaExportar("enviado");
     expect(res.success).toBe(true);
     expect(res.documentos).toEqual([]);
   });
 
-  it("retorna error si falla la consulta a Supabase", async () => {
-    (createClient as any).mockResolvedValue({
-      auth: {
-        getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-123" } } }),
-      },
-      from: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        is: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
-        order: vi.fn().mockResolvedValue({ data: null, error: { message: "db error" } }),
-      }),
-    });
+  it("retorna error controlado y un array vacío si la consulta a Supabase falla", async () => {
+    mockSupabaseMultiTenant({ documentError: { message: "Error crítico de base de datos" } });
     const res = await obtenerDocumentosParaExportar("recibido");
     expect(res.success).toBe(false);
     expect(res.error).toBe("Error al obtener los documentos");
     expect(res.documentos).toEqual([]);
-  });
-
-  it("no mezcla documentos enviados con recibidos", async () => {
-    const docs = [
-      { document_id: "E-001", description: "Enviado 1", signed_by: "Juan", addressed_to: "Dep A", document_date: "2025-01-15", pdf_url: null },
-    ];
-    let capturedEqArgs: any[] = [];
-    (createClient as any).mockResolvedValue({
-      auth: {
-        getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user-123" } } }),
-      },
-      from: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
-        eq: vi.fn().mockImplementation((col: string, val: string) => {
-          capturedEqArgs.push({ col, val });
-          return {
-            eq: vi.fn().mockReturnThis(),
-            is: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: { org_id: "org-123", email: "user@test.com" } }),
-            order: vi.fn().mockResolvedValue({ data: docs, error: null }),
-          };
-        }),
-        is: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({ data: docs, error: null }),
-      }),
-    });
-    await obtenerDocumentosParaExportar("enviado");
-    expect(capturedEqArgs.some((a) => a.val === "enviado")).toBe(true);
   });
 });

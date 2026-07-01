@@ -39,7 +39,7 @@ async function getUserAndOrg() {
 
   // Sin org_id el usuario no puede operar documentos
   if (!profile?.org_id) {
-    return { user, orgId: null as string | null, permission: "viewer" as const, role: "user" as const };
+    return { user, orgId: null, permission: "viewer" as const, role: "user" as const };
   }
 
   return {
@@ -55,7 +55,7 @@ function puedeModificar(permission: string, role: string): boolean {
   return role === "admin" || permission === "editor";
 }
 
-// ─── PDF upload ──────────────────────────────────────────────────────────────
+// ─── PDF upload (Optimizado para no saturar la RAM) ─────────────────────────
 async function subirPdf(archivo: File, documentId: string, userId: string) {
   if (archivo.size > TAMANO_MAXIMO_PDF) {
     return { error: "El PDF no puede superar 15 MB" };
@@ -63,12 +63,26 @@ async function subirPdf(archivo: File, documentId: string, userId: string) {
   if (archivo.type !== "application/pdf") {
     return { error: "Solo se permiten archivos PDF" };
   }
-  // Verificar magic bytes — los primeros 5 bytes de un PDF real son "%PDF-"
-  const buffer = await archivo.arrayBuffer();
-  const bytes = new Uint8Array(buffer.slice(0, 5));
-  const magic = String.fromCharCode(...bytes);
-  if (!magic.startsWith("%PDF")) {
-    return { error: "El archivo no es un PDF válido" };
+  
+  // 🚀 OPTIMIZACIÓN DE MEMORIA: Leer Magic Bytes usando streams sin instanciar todo el archivo en RAM
+  try {
+    const stream = archivo.stream();
+    const reader = stream.getReader();
+    const { value } = await reader.read(); // Lee solo el primer fragmento de datos (habitualmente 64KB o menos)
+    await reader.cancel(); // Aborta y libera el stream inmediatamente
+
+    if (!value) {
+      return { error: "El archivo está vacío o corrupto" };
+    }
+
+    const bytes = value.slice(0, 5);
+    const magic = String.fromCharCode(...bytes);
+    if (!magic.startsWith("%PDF")) {
+      return { error: "El archivo no tiene una cabecera PDF válida" };
+    }
+  } catch (err) {
+    console.error("Error al procesar stream de PDF:", err);
+    return { error: "No se pudo verificar la autenticidad del archivo" };
   }
 
   const admin = getAdminClient();
@@ -122,7 +136,7 @@ export async function crearDocumento(formData: FormData): Promise<ActionResult> 
     .insert({
       ...resultado.data,
       created_by: user.id,
-      org_id: orgId,           // ← vincula a la organización
+      org_id: orgId,
     })
     .select("id")
     .single();
@@ -136,8 +150,11 @@ export async function crearDocumento(formData: FormData): Promise<ActionResult> 
   if (archivoPdf && archivoPdf.size > 0) {
     const resPdf = await subirPdf(archivoPdf, data.id, user.id);
     if (resPdf.error) {
+      // Limpieza preventiva: Si falla el PDF, eliminamos el registro para evitar inconsistencias
+      await admin.from("documents").delete().eq("id", data.id);
       return { success: false, error: resPdf.error };
     }
+    
     await admin
       .from("documents")
       .update({
@@ -145,7 +162,8 @@ export async function crearDocumento(formData: FormData): Promise<ActionResult> 
         pdf_filename: resPdf.pdf_filename,
         pdf_size_bytes: resPdf.pdf_size_bytes,
       })
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .eq("org_id", orgId); // Doble verificación Tenant
   }
 
   await registrarAuditLog({
@@ -193,6 +211,19 @@ export async function actualizarDocumento(
 
   const admin = getAdminClient();
 
+  // Verificar la existencia y pertenencia del documento ANTES de subir el PDF
+  const { data: docExistente, error: errorVerificacion } = await admin
+    .from("documents")
+    .select("id")
+    .eq("id", id)
+    .eq("org_id", orgId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (errorVerificacion || !docExistente) {
+    return { success: false, error: "Documento no encontrado o acceso denegado" };
+  }
+
   const archivoPdf = formData.get("pdf") as File | null;
   let datosPdf = {};
 
@@ -212,7 +243,7 @@ export async function actualizarDocumento(
     .from("documents")
     .update({ ...resultado.data, ...datosPdf, updated_by: user.id })
     .eq("id", id)
-    .eq("org_id", orgId)       // ← solo puede editar docs de su org
+    .eq("org_id", orgId)
     .is("deleted_at", null);
 
   if (error) {
@@ -250,12 +281,17 @@ export async function eliminarDocumento(id: string): Promise<ActionResult> {
 
   const admin = getAdminClient();
 
-  // Obtener document_id antes de borrar para el log
+  // Asegurar que el documento a consultar pertenece al Tenant antes de borrarlo
   const { data: docInfo } = await admin
     .from("documents")
     .select("document_id")
     .eq("id", id)
+    .eq("org_id", orgId)
     .single();
+
+  if (!docInfo) {
+    return { success: false, error: "El documento no existe o pertenece a otra organización." };
+  }
 
   const { error } = await admin
     .from("documents")
@@ -275,7 +311,7 @@ export async function eliminarDocumento(id: string): Promise<ActionResult> {
     user_email: user.email!,
     action: "eliminar_documento",
     entity: "documento",
-    entity_id: docInfo?.document_id ?? id,
+    entity_id: docInfo.document_id ?? id,
     details: { uuid: id },
   });
 
@@ -303,7 +339,7 @@ export async function eliminarTodosDocumentos(
     .from("documents")
     .update({ deleted_at: new Date().toISOString(), updated_by: user.id })
     .eq("type", tipo)
-    .eq("org_id", orgId)       // ← CRÍTICO: solo borra los de su org
+    .eq("org_id", orgId)
     .is("deleted_at", null);
 
   if (error) {
